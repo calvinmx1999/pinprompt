@@ -116,6 +116,19 @@ Resources:`;for(let t of l){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   }
   .pinprompt-card-summary-row > span{flex-shrink:0!important}
   .pinprompt-home-link{cursor:pointer!important}
+  .pinprompt-landing-glyph{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-8deg);font-size:30px;font-weight:900;color:#1f2a44;line-height:1;pointer-events:none;font-family:"Noto Sans SC","PingFang SC",sans-serif;text-shadow:0 1px 0 rgba(255,255,255,0.45);z-index:9;letter-spacing:0}
+  .pinprompt-landing-logo-wrap{display:flex;align-items:center;gap:10px;min-width:0}
+  .pinprompt-landing-logo-mark{position:relative;width:46px;height:46px;flex-shrink:0}
+  .pinprompt-landing-logo-card{position:absolute;inset:0;border-radius:7px;border:1.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.16)}
+  .pinprompt-landing-logo-card.back-a{background:#f8bbd9;transform:rotate(3deg) translate(3px,1px);z-index:1}
+  .pinprompt-landing-logo-card.back-b{background:#fff59d;transform:rotate(-3deg) translate(-1px,3px);z-index:2}
+  .pinprompt-landing-logo-card.front{background:#c8e6c9;transform:rotate(-6deg);z-index:3;display:flex;align-items:center;justify-content:center}
+  .pinprompt-landing-logo-glyph{font-size:29px;font-weight:900;line-height:1;color:#1f2a44;transform:rotate(-8deg);font-family:"Noto Sans SC","PingFang SC",sans-serif}
+  .pinprompt-landing-logo-text{display:flex;flex-direction:column;gap:1px;min-width:0}
+  .pinprompt-landing-logo-title{font-family:"Space Grotesk","DM Sans",Arial,sans-serif;font-size:22px;font-weight:700;line-height:1}
+  .pinprompt-landing-logo-title .pin{color:#2d3748}
+  .pinprompt-landing-logo-title .prompt{color:#e91e63}
+  .pinprompt-landing-logo-sub{font-size:12px;line-height:1.05;color:#9ca3af;font-family:"Noto Sans SC","PingFang SC",sans-serif}
   @media (max-width: 1100px){
     .pinprompt-dashboard-nav{gap:22px;font-size:13px;padding-left:14px}
   }
@@ -191,17 +204,59 @@ Resources:`;for(let t of l){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
         if(filterRow.parentElement!==summaryRow)summaryRow.appendChild(filterRow);
       }
     }
+    function enhanceLandingLogoGlyph(){
+      var topNav=Array.from(document.querySelectorAll("nav")).find(function(node){
+        if(!(node.style&&node.style.position==="fixed"&&node.style.top==="0px"))return false;
+        var text=(node.textContent||"").replace(/\s+/g,"");
+        return /产品/.test(text)&&/模板/.test(text)&&/工作流/.test(text)&&/PinPrompt/.test(text);
+      });
+      if(!topNav)return;
+      var logoRow=topNav.firstElementChild;
+      if(!logoRow||logoRow.dataset.pinpromptLogoReplaced)return;
+      logoRow.innerHTML='';
+      logoRow.style.display='flex';
+      logoRow.style.alignItems='center';
+      logoRow.style.gap='10px';
+      logoRow.style.flex='1';
+      var wrap=document.createElement('div');
+      wrap.className='pinprompt-landing-logo-wrap';
+      wrap.innerHTML=
+        '<div class="pinprompt-landing-logo-mark">'+
+          '<div class="pinprompt-landing-logo-card back-a"></div>'+
+          '<div class="pinprompt-landing-logo-card back-b"></div>'+
+          '<div class="pinprompt-landing-logo-card front"><span class="pinprompt-landing-logo-glyph">拼</span></div>'+
+        '</div>'+
+        '<div class="pinprompt-landing-logo-text">'+
+          '<div class="pinprompt-landing-logo-title"><span class="pin">Pin</span><span class="prompt">Prompt</span></div>'+
+          '<div class="pinprompt-landing-logo-sub">提示词灵感库</div>'+
+        '</div>';
+      logoRow.appendChild(wrap);
+      logoRow.dataset.pinpromptLogoReplaced='1';
+    }
     function enhanceLogo(){
       var logoText=Array.from(document.querySelectorAll("span")).find(function(node){
         return node.textContent==="提示词灵感库";
       });
       if(!logoText)return;
-      var container=logoText.closest("div[style]")&&logoText.closest("div[style]").parentElement&&logoText.closest("div[style]").parentElement.parentElement;
-      if(!container||container.dataset.pinpromptHomeLink)return;
-      container.dataset.pinpromptHomeLink="1";
-      container.classList.add("pinprompt-home-link");
-      container.title="返回 Homepage";
-      container.addEventListener("click",function(){goHome()});
+      var textBlock=logoText.closest("div[style]");
+      var logoRow=textBlock&&textBlock.parentElement;
+      if(!logoRow)return;
+      var iconStack=Array.from(logoRow.children).find(function(node){
+        return node.tagName==="DIV"&&node.style&&node.style.position==="relative";
+      });
+      var brandLine=textBlock&&Array.from(textBlock.children).find(function(node){
+        return /PinPrompt/.test((node.textContent||""));
+      });
+      [iconStack,brandLine].forEach(function(node){
+        if(!node||node.dataset.pinpromptHomeLink)return;
+        node.dataset.pinpromptHomeLink="1";
+        node.classList.add("pinprompt-home-link");
+        node.title="返回 Homepage";
+        node.addEventListener("click",function(event){
+          event.stopPropagation();
+          goHome();
+        });
+      });
     }
     function scrollHomeTarget(){
       var label;
@@ -217,6 +272,7 @@ Resources:`;for(let t of l){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
     }
     function run(){
       enhanceHeader();
+      enhanceLandingLogoGlyph();
       enhanceLogo();
       scrollHomeTarget();
     }
