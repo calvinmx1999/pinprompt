@@ -229,6 +229,11 @@ button {
   font-size: 12px;
 }
 
+.account-card--guest .account-card__avatar {
+  background: rgba(219, 240, 222, 0.9);
+  color: #22854c;
+}
+
 .login-shell {
   min-height: 100vh;
   display: grid;
@@ -411,6 +416,11 @@ button {
 .primary-button--small {
   min-height: 34px;
   padding: 0 12px;
+}
+
+.primary-button--wide {
+  width: 100%;
+  margin-top: 14px;
 }
 
 .secondary-button {
@@ -1437,6 +1447,13 @@ button {
 
 .tool-compare-card__head strong {
   margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tool-compare-card__head strong i {
+  font-style: normal;
 }
 
 .tool-compare-card__head span {
@@ -1446,6 +1463,17 @@ button {
 
 .tool-compare-card__tags {
   margin-top: 14px;
+}
+
+.tool-compare-card__link {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  margin-top: 14px;
+  color: #3459f2;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
 }
 
 .tool-compare-card__tags span,

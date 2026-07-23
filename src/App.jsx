@@ -6,6 +6,7 @@ import LearningSidebar from "./components/LearningSidebar.jsx";
 import LearningFilterBar from "./components/LearningFilterBar.jsx";
 import LearningGrid from "./components/LearningGrid.jsx";
 import LearningDashboard from "./components/LearningDashboard.jsx";
+import LearningHomePage from "./components/LearningHomePage.jsx";
 import LearningDetailPage from "./components/LearningDetailPage.jsx";
 import TemplateInspector from "./components/TemplateInspector.jsx";
 import {
@@ -83,6 +84,7 @@ function getListView(type) {
 export default function App() {
   const [existingUser, setExistingUser] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [showLogin, setShowLogin] = useState(false);
   const [items, setItems] = useState([]);
   const [legacyPrompts, setLegacyPrompts] = useState([]);
   const [toolProfiles, setToolProfiles] = useState([]);
@@ -112,7 +114,7 @@ export default function App() {
     [items, selectedItemId]
   );
   const visibleLegacyPrompts = useMemo(() => {
-    if (!currentUser) return [];
+    if (!currentUser) return legacyPrompts;
     return legacyPrompts.filter((prompt) => !prompt.userId || prompt.userId === currentUser.id);
   }, [currentUser, legacyPrompts]);
 
@@ -239,18 +241,20 @@ export default function App() {
     const savedUser = saveCurrentUser(nextUser);
     setExistingUser(savedUser);
     setCurrentUser(savedUser);
+    setShowLogin(false);
     showToast("欢迎进入 AIGC 学习站");
   }
 
   function handleLogout() {
     clearCurrentUser();
     setCurrentUser(null);
+    setShowLogin(false);
     setCurrentView("home");
     setSelectedItemId(null);
     showToast("已退出登录");
   }
 
-  if (!currentUser) {
+  if (!currentUser && showLogin) {
     return (
       <>
         <LoginPage
@@ -258,6 +262,7 @@ export default function App() {
           onContinue={() => {
             if (!existingUser) return;
             setCurrentUser(saveCurrentUser(existingUser));
+            setShowLogin(false);
             showToast("欢迎回来");
           }}
           onLogin={handleLogin}
@@ -277,6 +282,7 @@ export default function App() {
         counts={counts}
         currentUser={currentUser}
         currentView={currentView}
+        onLoginRequest={() => setShowLogin(true)}
         onLogout={handleLogout}
         onViewChange={(view) => {
           resetFilters();
@@ -316,7 +322,7 @@ export default function App() {
             />
           ) : null}
 
-          {currentView === "home" ? (
+          {currentView === "home" && currentUser ? (
             <LearningDashboard
               items={items}
               onCopyLegacyPrompt={handleCopyLegacyPrompt}
@@ -324,6 +330,8 @@ export default function App() {
               prompts={visibleLegacyPrompts}
               tools={toolProfiles}
             />
+          ) : currentView === "home" ? (
+            <LearningHomePage items={items} onOpenItem={handleOpenItem} />
           ) : currentView === "pathDetail" || currentView === "caseDetail" || currentView === "articleDetail" ? (
             <LearningDetailPage
               item={selectedItem}
@@ -357,21 +365,26 @@ export default function App() {
         ) : currentView === "home" ? (
           <aside className="inspector">
             <div className="inspector__section">
-              <div className="section-title">学习站结构</div>
+              <div className="section-title">{currentUser ? "学习站结构" : "开始学习"}</div>
               <div className="detail-list detail-list--tight">
                 <div className="detail-list__item">
-                  <strong>首页</strong>
-                  <p>继续学习、推荐课程、工具对比和旧提示词收藏集中展示。</p>
+                  <strong>{currentUser ? "首页" : "公开内容"}</strong>
+                  <p>{currentUser ? "继续学习、推荐课程、工具对比和旧提示词收藏集中展示。" : "无需登录也可以浏览学习路径、案例、工具文章和提示词模板。"}</p>
                 </div>
                 <div className="detail-list__item">
                   <strong>学习路径</strong>
                   <p>按方向推进，先建立文案、海报、视频和内容生产的基本方法。</p>
                 </div>
                 <div className="detail-list__item">
-                  <strong>提示词模板</strong>
-                  <p>保留原有收藏能力，模板仍然可以一键复制。</p>
+                  <strong>{currentUser ? "提示词模板" : "登录后"}</strong>
+                  <p>{currentUser ? "保留原有收藏能力，模板仍然可以一键复制。" : "可以保留收藏、旧提示词和本地学习记录。"}</p>
                 </div>
               </div>
+              {!currentUser ? (
+                <button className="primary-button primary-button--wide" onClick={() => setShowLogin(true)} type="button">
+                  登录保存学习记录
+                </button>
+              ) : null}
             </div>
           </aside>
         ) : null}

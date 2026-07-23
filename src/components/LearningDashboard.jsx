@@ -26,7 +26,7 @@ function ToolCompare({ tools = [] }) {
         {tools.slice(0, 4).map((tool) => (
           <article className="tool-compare-card" key={tool.id}>
             <div className="tool-compare-card__head">
-              <strong>{tool.name}</strong>
+              <strong>{tool.emoji ? <i aria-hidden="true">{tool.emoji}</i> : null}{tool.name}</strong>
               <span>{tool.category}</span>
             </div>
             <p>{tool.bestFor}</p>
@@ -35,6 +35,11 @@ function ToolCompare({ tools = [] }) {
                 <span key={tag}>{tag}</span>
               ))}
             </div>
+            {tool.url ? (
+              <a className="tool-compare-card__link" href={tool.url} rel="noreferrer" target="_blank">
+                查看工具
+              </a>
+            ) : null}
           </article>
         ))}
       </div>

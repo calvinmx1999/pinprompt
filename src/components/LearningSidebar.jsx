@@ -2,6 +2,7 @@ export default function LearningSidebar({
   currentUser,
   currentView,
   counts,
+  onLoginRequest,
   onViewChange,
   onLogout,
 }) {
@@ -82,7 +83,21 @@ export default function LearningSidebar({
             退出
           </button>
         </div>
-      ) : null}
+      ) : (
+        <div className="account-card account-card--guest">
+          <div className="account-card__avatar">
+            <span>学</span>
+          </div>
+          <div className="account-card__copy">
+            <div className="account-card__name">游客模式</div>
+            <div className="account-card__email">可浏览课程和模板</div>
+            <div className="account-card__status">登录后保存学习记录</div>
+          </div>
+          <button className="account-card__logout" onClick={onLoginRequest} type="button">
+            登录
+          </button>
+        </div>
+      )}
     </aside>
   );
 }

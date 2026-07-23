@@ -58,6 +58,9 @@ function normalizeToolProfile(tool) {
     learningUse: tool.learningUse || "",
     goodAt: Array.isArray(tool.goodAt) ? tool.goodAt : [],
     limitations: Array.isArray(tool.limitations) ? tool.limitations : [],
+    emoji: tool.emoji || "",
+    url: tool.url || "",
+    color: tool.color || "",
   };
 }
 
