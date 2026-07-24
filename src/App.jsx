@@ -1,14 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import LoginPage from "./components/LoginPage.jsx";
 import Toast from "./components/Toast.jsx";
-import PromptSearchBar from "./components/PromptSearchBar.jsx";
-import LearningSidebar from "./components/LearningSidebar.jsx";
-import LearningFilterBar from "./components/LearningFilterBar.jsx";
-import LearningGrid from "./components/LearningGrid.jsx";
-import LearningDashboard from "./components/LearningDashboard.jsx";
-import LearningHomePage from "./components/LearningHomePage.jsx";
 import LearningDetailPage from "./components/LearningDetailPage.jsx";
-import TemplateInspector from "./components/TemplateInspector.jsx";
+import V7ContentPage from "./components/V7ContentPage.jsx";
+import V7Dashboard from "./components/V7Dashboard.jsx";
+import V7Header from "./components/V7Header.jsx";
+import V7HomePage from "./components/V7HomePage.jsx";
 import {
   clearCurrentUser,
   createLocalUser,
@@ -28,50 +25,11 @@ import {
   toggleFavoriteId,
 } from "./lib/learningSite.js";
 
-const VIEW_META = {
-  home: {
-    title: "首页",
-    sub: "从课程路径、案例拆解到模板练习，把 AIGC 真正学会，而不是只收藏一堆提示词。",
-  },
-  learningPaths: {
-    title: "学习路径",
-    sub: "按顺序推进，知道先学什么、再练什么，适合从零开始系统入门。",
-  },
-  pathDetail: {
-    title: "学习路径详情",
-    sub: "先看完整路径，再按步骤练习和复盘。",
-  },
-  cases: {
-    title: "实战案例",
-    sub: "从真实业务任务出发，拆解步骤、练习任务、常见错误和修改方法。",
-  },
-  caseDetail: {
-    title: "实战案例详情",
-    sub: "跟着一个案例走完整遍，会比只看知识点更快上手。",
-  },
-  articles: {
-    title: "工具专栏",
-    sub: "先理解工具适合什么、不适合什么，再决定什么时候该用它。",
-  },
-  articleDetail: {
-    title: "工具专栏详情",
-    sub: "把工具理解清楚，学习路径才会更顺。",
-  },
-  templates: {
-    title: "提示词模板",
-    sub: "看完路径和案例以后，直接复制模板开始动手练。",
-  },
-  favorites: {
-    title: "我的收藏",
-    sub: "把常看、常练、常复制的内容收在一起，后面复习更快。",
-  },
-};
-
 function getDetailView(type) {
   if (type === "learningPath") return "pathDetail";
   if (type === "case") return "caseDetail";
   if (type === "article") return "articleDetail";
-  return "templates";
+  return "templateDetail";
 }
 
 function getListView(type) {
@@ -122,7 +80,7 @@ export default function App() {
     if (currentView === "learningPaths" || currentView === "pathDetail") return "learningPath";
     if (currentView === "cases" || currentView === "caseDetail") return "case";
     if (currentView === "articles" || currentView === "articleDetail") return "article";
-    if (currentView === "templates") return "template";
+    if (currentView === "templates" || currentView === "templateDetail") return "template";
     return "all";
   }, [currentView]);
 
@@ -139,15 +97,6 @@ export default function App() {
     [activeType, currentView, items, searchQuery, selectedDirection, selectedScenario, selectedTool]
   );
 
-  useEffect(() => {
-    if (currentView !== "templates") return;
-    const visibleTemplates = filteredItems.filter((item) => item.type === "template");
-    if (!visibleTemplates.length) return;
-    if (!selectedItemId || !visibleTemplates.some((item) => item.id === selectedItemId)) {
-      setSelectedItemId(visibleTemplates[0].id);
-    }
-  }, [currentView, filteredItems, selectedItemId]);
-
   function showToast(message) {
     setToastMessage(message);
     window.clearTimeout(showToast.timer);
@@ -156,10 +105,23 @@ export default function App() {
 
   async function copyText(text, successMessage = "已复制提示词") {
     try {
-      await navigator.clipboard.writeText(text);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        throw new Error("Clipboard API unavailable");
+      }
       showToast(successMessage);
     } catch {
-      showToast("复制失败，请手动复制");
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      const copied = document.execCommand("copy");
+      textarea.remove();
+      showToast(copied ? successMessage : "复制失败，请手动复制");
     }
   }
 
@@ -210,11 +172,6 @@ export default function App() {
   function handleSelectCard(itemId) {
     const item = items.find((entry) => entry.id === itemId);
     if (!item) return;
-    if (item.type === "template") {
-      setSelectedItemId(item.id);
-      setCurrentView("templates");
-      return;
-    }
     handleOpenItem(item);
   }
 
@@ -272,58 +229,28 @@ export default function App() {
     );
   }
 
-  const meta = VIEW_META[currentView];
-  const showFilters = ["learningPaths", "cases", "articles", "templates", "favorites"].includes(currentView);
-  const showSearch = currentView !== "home";
-
   return (
-    <div className="app-shell">
-      <LearningSidebar
-        counts={counts}
+    <div className="v7-site">
+      <V7Header
         currentUser={currentUser}
         currentView={currentView}
         onLoginRequest={() => setShowLogin(true)}
         onLogout={handleLogout}
+        onSearch={(query) => {
+          setSearchQuery(query);
+          if (query && currentView === "home") setCurrentView("cases");
+        }}
         onViewChange={(view) => {
           resetFilters();
           handleViewChange(view);
         }}
+        searchQuery={searchQuery}
       />
 
-      <main className="workspace">
-        <section className="workspace-main">
-          <div className="workspace-main__header">
-            <div>
-              <div className="workspace-main__title">{meta.title}</div>
-              <div className="workspace-main__sub">{meta.sub}</div>
-            </div>
-          </div>
-
-          {showSearch ? (
-            <PromptSearchBar
-              hint="支持按学习方向、业务场景、工具和关键词搜索"
-              onChange={setSearchQuery}
-              placeholder="搜索学习主题，例如：AI 海报、可灵转场、人像修图、小红书文案"
-              value={searchQuery}
-            />
-          ) : null}
-
-          {showFilters ? (
-            <LearningFilterBar
-              directions={taxonomy.directions}
-              onDirectionChange={setSelectedDirection}
-              onScenarioChange={setSelectedScenario}
-              onToolChange={setSelectedTool}
-              scenarios={taxonomy.scenarios}
-              selectedDirection={selectedDirection}
-              selectedScenario={selectedScenario}
-              selectedTool={selectedTool}
-              tools={taxonomy.tools}
-            />
-          ) : null}
-
+      <main className="v7-main">
           {currentView === "home" && currentUser ? (
-            <LearningDashboard
+            <V7Dashboard
+              currentUser={currentUser}
               items={items}
               onCopyLegacyPrompt={handleCopyLegacyPrompt}
               onOpenItem={handleOpenItem}
@@ -331,8 +258,13 @@ export default function App() {
               tools={toolProfiles}
             />
           ) : currentView === "home" ? (
-            <LearningHomePage items={items} onOpenItem={handleOpenItem} />
-          ) : currentView === "pathDetail" || currentView === "caseDetail" || currentView === "articleDetail" ? (
+            <V7HomePage
+              items={items}
+              onOpenItem={handleOpenItem}
+              onStartLearning={() => setShowLogin(true)}
+              onViewChange={handleViewChange}
+            />
+          ) : ["pathDetail", "caseDetail", "articleDetail", "templateDetail"].includes(currentView) ? (
             <LearningDetailPage
               item={selectedItem}
               onBack={handleBackFromDetail}
@@ -340,54 +272,38 @@ export default function App() {
               onToggleFavorite={handleToggleFavorite}
             />
           ) : (
-            <LearningGrid
-              emptyBody={
-                currentView === "favorites"
-                  ? "先收藏几条学习路径、案例或模板，后面复习会更快。"
-                  : "可以换个方向、业务场景或工具再试试。"
-              }
-              emptyTitle={currentView === "favorites" ? "还没有收藏内容" : "没有找到匹配内容"}
+            <V7ContentPage
+              filters={{
+                direction: selectedDirection,
+                directions: taxonomy.directions,
+                scenario: selectedScenario,
+                scenarios: taxonomy.scenarios,
+                tool: selectedTool,
+                tools: taxonomy.tools,
+              }}
               items={filteredItems}
               onCopyPrompt={handleCopyPrompt}
-              onSelect={handleSelectCard}
+              onFilterChange={(name, value) => {
+                if (name === "direction") setSelectedDirection(value);
+                if (name === "scenario") setSelectedScenario(value);
+                if (name === "tool") setSelectedTool(value);
+              }}
+              onOpenItem={(item) => handleSelectCard(item.id)}
               onToggleFavorite={handleToggleFavorite}
-              selectedItemId={selectedItemId}
+              tools={toolProfiles}
+              type={
+                currentView === "learningPaths"
+                  ? "learningPath"
+                  : currentView === "cases"
+                    ? "case"
+                    : currentView === "articles"
+                      ? "article"
+                      : currentView === "templates"
+                        ? "template"
+                        : "favorite"
+              }
             />
           )}
-        </section>
-
-        {currentView === "templates" || (currentView === "favorites" && selectedItem?.type === "template") ? (
-          <TemplateInspector
-            item={selectedItem?.type === "template" ? selectedItem : filteredItems.find((item) => item.type === "template") || null}
-            onCopyPrompt={handleCopyPrompt}
-            onToggleFavorite={handleToggleFavorite}
-          />
-        ) : currentView === "home" ? (
-          <aside className="inspector">
-            <div className="inspector__section">
-              <div className="section-title">{currentUser ? "学习站结构" : "开始学习"}</div>
-              <div className="detail-list detail-list--tight">
-                <div className="detail-list__item">
-                  <strong>{currentUser ? "首页" : "公开内容"}</strong>
-                  <p>{currentUser ? "继续学习、推荐课程、工具对比和旧提示词收藏集中展示。" : "无需登录也可以浏览学习路径、案例、工具文章和提示词模板。"}</p>
-                </div>
-                <div className="detail-list__item">
-                  <strong>学习路径</strong>
-                  <p>按方向推进，先建立文案、海报、视频和内容生产的基本方法。</p>
-                </div>
-                <div className="detail-list__item">
-                  <strong>{currentUser ? "提示词模板" : "登录后"}</strong>
-                  <p>{currentUser ? "保留原有收藏能力，模板仍然可以一键复制。" : "可以保留收藏、旧提示词和本地学习记录。"}</p>
-                </div>
-              </div>
-              {!currentUser ? (
-                <button className="primary-button primary-button--wide" onClick={() => setShowLogin(true)} type="button">
-                  登录保存学习记录
-                </button>
-              ) : null}
-            </div>
-          </aside>
-        ) : null}
       </main>
 
       <Toast message={toastMessage} />

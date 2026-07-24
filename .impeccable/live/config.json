@@ -1,0 +1,8 @@
+{
+  "productContext": "PRODUCT.md",
+  "designContext": "DESIGN.md",
+  "defaultViewport": {
+    "width": 1440,
+    "height": 1000
+  }
+}
