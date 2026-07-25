@@ -8,7 +8,7 @@ function promptTypeLabel(type) {
   return labels[type] || "模板";
 }
 
-export default function LegacyPromptShelf({ prompts = [], onCopyPrompt }) {
+export default function LegacyPromptShelf({ prompts = [], onCopyPrompt, onCreatePrompt, onOpenLibrary }) {
   const visiblePrompts = prompts.slice(0, 6);
 
   if (!visiblePrompts.length) {
@@ -16,9 +16,11 @@ export default function LegacyPromptShelf({ prompts = [], onCopyPrompt }) {
       <section className="legacy-prompt-shelf legacy-prompt-shelf--empty">
         <div>
           <h2>提示词收藏</h2>
-          <p>旧版收藏会继续保存在本地，后续复制和学习都可以从这里开始。</p>
+          <p>登录后会从原账号同步提示词，也可以直接创建第一条新内容。</p>
         </div>
-        <span>暂无本地提示词</span>
+        <button className="primary-button primary-button--small" onClick={onCreatePrompt} type="button">
+          新建提示词
+        </button>
       </section>
     );
   }
@@ -28,8 +30,9 @@ export default function LegacyPromptShelf({ prompts = [], onCopyPrompt }) {
       <div className="dashboard-section__head">
         <div>
           <h2>提示词收藏</h2>
-          <p>保留旧版收藏能力，学习完课程后可以直接复制常用模板。</p>
+          <p>来自原账号的云端提示词，学习完课程后可以继续复制和维护。</p>
         </div>
+        <button className="v7-text-link" onClick={onOpenLibrary} type="button">查看全部 →</button>
       </div>
 
       <div className="legacy-prompt-list">

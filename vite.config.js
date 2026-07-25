@@ -4,4 +4,13 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   base: "./",
   plugins: [react()],
+  server: {
+    proxy: {
+      "/api/supabase": {
+        target: "https://zayfzpsrhxiaetrcttko.supabase.co",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/supabase/, ""),
+      },
+    },
+  },
 });

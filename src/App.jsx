@@ -2,23 +2,36 @@ import { useEffect, useMemo, useState } from "react";
 import LoginPage from "./components/LoginPage.jsx";
 import Toast from "./components/Toast.jsx";
 import LearningDetailPage from "./components/LearningDetailPage.jsx";
+import PromptEditorModal from "./components/PromptEditorModal.jsx";
 import V7ContentPage from "./components/V7ContentPage.jsx";
 import V7Dashboard from "./components/V7Dashboard.jsx";
 import V7Header from "./components/V7Header.jsx";
 import V7HomePage from "./components/V7HomePage.jsx";
+import V7UserPromptLibrary from "./components/V7UserPromptLibrary.jsx";
 import {
   clearCurrentUser,
-  createLocalUser,
   ensureThemeSeed,
   loadCurrentUser,
+  loadProjects,
   loadPrompts,
   migrateLegacyData,
   saveCurrentUser,
+  saveProjects,
   savePrompts,
 } from "./lib/storage.js";
 import {
+  deleteCloudPrompt,
+  fetchCloudLibrary,
+  getCloudUser,
+  signInCloud,
+  signOutCloud,
+  signUpCloud,
+  upsertCloudProjects,
+  upsertCloudPrompt,
+  upsertCloudPrompts,
+} from "./lib/cloud.js";
+import {
   filterLearningItems,
-  getLearningCounts,
   getLearningTaxonomy,
   loadLearningItems,
   loadToolProfiles,
@@ -43,9 +56,16 @@ export default function App() {
   const [existingUser, setExistingUser] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [syncState, setSyncState] = useState("idle");
   const [items, setItems] = useState([]);
   const [legacyPrompts, setLegacyPrompts] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [toolProfiles, setToolProfiles] = useState([]);
+  const [showPromptEditor, setShowPromptEditor] = useState(false);
+  const [editingPrompt, setEditingPrompt] = useState(null);
+  const [userPromptSearch, setUserPromptSearch] = useState("");
   const [currentView, setCurrentView] = useState("home");
   const [selectedItemId, setSelectedItemId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -59,21 +79,32 @@ export default function App() {
     const migrationState = migrateLegacyData();
     const restoredUser = loadCurrentUser() || migrationState.currentUser || null;
     setExistingUser(restoredUser || migrationState.currentUser || null);
-    setCurrentUser(restoredUser);
     setItems(loadLearningItems());
-    setLegacyPrompts(loadPrompts());
+    const localPrompts = loadPrompts();
+    const localProjects = loadProjects();
+    setLegacyPrompts([]);
+    setProjects([]);
     setToolProfiles(loadToolProfiles());
+
+    getCloudUser()
+      .then((cloudUser) => {
+        if (cloudUser) return activateCloudUser(cloudUser, localPrompts, localProjects);
+        clearCurrentUser();
+        return null;
+      })
+      .catch(() => {
+        clearCurrentUser();
+      });
   }, []);
 
-  const counts = useMemo(() => getLearningCounts(items), [items]);
   const taxonomy = useMemo(() => getLearningTaxonomy(items), [items]);
   const selectedItem = useMemo(
     () => items.find((item) => item.id === selectedItemId) || null,
     [items, selectedItemId]
   );
   const visibleLegacyPrompts = useMemo(() => {
-    if (!currentUser) return legacyPrompts;
-    return legacyPrompts.filter((prompt) => !prompt.userId || prompt.userId === currentUser.id);
+    if (!currentUser) return [];
+    return legacyPrompts.filter((prompt) => prompt.userId === currentUser.id);
   }, [currentUser, legacyPrompts]);
 
   const activeType = useMemo(() => {
@@ -154,7 +185,14 @@ export default function App() {
         : entry
     );
     setLegacyPrompts(nextPrompts);
-    savePrompts(nextPrompts);
+    const otherUsersPrompts = loadPrompts().filter(
+      (entry) => entry.userId && entry.userId !== currentUser?.id
+    );
+    savePrompts([...otherUsersPrompts, ...nextPrompts]);
+    const updatedPrompt = nextPrompts.find((entry) => entry.id === prompt.id);
+    if (currentUser && updatedPrompt) {
+      persistCloudPrompt(updatedPrompt);
+    }
   }
 
   function resetFilters() {
@@ -184,45 +222,231 @@ export default function App() {
   }
 
   function handleViewChange(view) {
+    if (view === "myPrompts" && !currentUser) {
+      setShowLogin(true);
+      return;
+    }
     setCurrentView(view);
     if (view !== "templates" && !view.endsWith("Detail")) {
       setSelectedItemId(null);
     }
   }
 
-  function handleLogin({ email }) {
-    const nextUser =
-      existingUser && (!email || existingUser.email === email)
-        ? existingUser
-        : createLocalUser({ email, name: email ? email.split("@")[0] : "AIGC 学员" });
-    const savedUser = saveCurrentUser(nextUser);
-    setExistingUser(savedUser);
-    setCurrentUser(savedUser);
-    setShowLogin(false);
-    showToast("欢迎进入 AIGC 学习站");
+  function authErrorMessage(error) {
+    const message = String(error?.message || "");
+    if (/invalid login credentials/i.test(message)) return "邮箱或密码不正确";
+    if (/email not confirmed/i.test(message)) return "请先打开邮箱完成账号验证";
+    if (/password/i.test(message) && /6/i.test(message)) return "密码至少需要 6 位";
+    if (/already registered/i.test(message)) return "该邮箱已经注册，请直接登录";
+    if (/failed to fetch|network/i.test(message)) return "云端连接失败，请检查网络后重试";
+    return message || "登录失败，请稍后重试";
   }
 
-  function handleLogout() {
+  async function activateCloudUser(user, localPrompts = loadPrompts(), localProjects = loadProjects()) {
+    setSyncState("loading");
+    const savedUser = saveCurrentUser(user);
+    setExistingUser(savedUser);
+    setCurrentUser(savedUser);
+
+    try {
+      const cloudLibrary = await fetchCloudLibrary(user.id);
+      const ownedLocalPrompts = localPrompts.filter((prompt) => prompt.userId === user.id);
+      const ownedLocalProjects = localProjects.filter((project) => project.userId === user.id);
+
+      let nextPrompts = cloudLibrary.prompts;
+      let nextProjects = cloudLibrary.projects;
+
+      if (!nextPrompts.length && ownedLocalPrompts.length) {
+        await upsertCloudPrompts(user.id, ownedLocalPrompts);
+        nextPrompts = ownedLocalPrompts;
+      }
+      if (!nextProjects.length && ownedLocalProjects.length) {
+        await upsertCloudProjects(user.id, ownedLocalProjects);
+        nextProjects = ownedLocalProjects;
+      }
+
+      const normalizedPrompts = nextPrompts.map((prompt) => ({ ...prompt, userId: user.id }));
+      const normalizedProjects = nextProjects.map((project) => ({ ...project, userId: user.id }));
+      const otherUsersPrompts = localPrompts.filter(
+        (prompt) => prompt.userId && prompt.userId !== user.id
+      );
+      const otherUsersProjects = localProjects.filter(
+        (project) => project.userId && project.userId !== user.id
+      );
+      savePrompts([...otherUsersPrompts, ...normalizedPrompts]);
+      saveProjects([...otherUsersProjects, ...normalizedProjects]);
+      setLegacyPrompts(loadPrompts().filter((prompt) => prompt.userId === user.id));
+      setProjects(loadProjects().filter((project) => project.userId === user.id));
+      setSyncState("ok");
+    } catch (error) {
+      const cachedPrompts = localPrompts.filter((prompt) => prompt.userId === user.id);
+      const cachedProjects = localProjects.filter((project) => project.userId === user.id);
+      setLegacyPrompts(cachedPrompts);
+      setProjects(cachedProjects);
+      setSyncState("error");
+      showToast(authErrorMessage(error));
+    }
+  }
+
+  async function handleLogin({ email, password }) {
+    if (!String(email || "").trim() || !password) {
+      setAuthError("请输入邮箱和密码");
+      return;
+    }
+    setAuthLoading(true);
+    setAuthError("");
+    try {
+      const user = await signInCloud(email, password);
+      await activateCloudUser(user);
+      setShowLogin(false);
+      setCurrentView("myPrompts");
+      showToast("账号与提示词已同步");
+    } catch (error) {
+      setAuthError(authErrorMessage(error));
+    } finally {
+      setAuthLoading(false);
+    }
+  }
+
+  async function handleRegister({ email, password }) {
+    if (!String(email || "").trim()) {
+      setAuthError("请输入邮箱");
+      return;
+    }
+    if (String(password || "").length < 6) {
+      setAuthError("密码至少需要 6 位");
+      return;
+    }
+    setAuthLoading(true);
+    setAuthError("");
+    try {
+      const result = await signUpCloud(email, password);
+      if (!result.hasSession) {
+        setAuthError("注册成功，请打开邮箱完成验证后再登录");
+        return;
+      }
+      await activateCloudUser(result.user, [], []);
+      setShowLogin(false);
+      setCurrentView("myPrompts");
+      showToast("账号创建成功");
+    } catch (error) {
+      setAuthError(authErrorMessage(error));
+    } finally {
+      setAuthLoading(false);
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      await signOutCloud();
+    } catch {
+      // Local logout still proceeds when the network is temporarily unavailable.
+    }
     clearCurrentUser();
     setCurrentUser(null);
+    setLegacyPrompts([]);
+    setProjects([]);
+    setSyncState("idle");
     setShowLogin(false);
     setCurrentView("home");
     setSelectedItemId(null);
     showToast("已退出登录");
   }
 
+  async function persistCloudPrompt(prompt) {
+    if (!currentUser) return;
+    setSyncState("loading");
+    try {
+      await upsertCloudPrompt(currentUser.id, prompt);
+      setSyncState("ok");
+    } catch (error) {
+      setSyncState("error");
+      showToast(authErrorMessage(error));
+    }
+  }
+
+  function handleNewUserPrompt() {
+    if (!currentUser) {
+      setShowLogin(true);
+      return;
+    }
+    setEditingPrompt(null);
+    setShowPromptEditor(true);
+  }
+
+  function handleEditUserPrompt(prompt) {
+    setEditingPrompt(prompt);
+    setShowPromptEditor(true);
+  }
+
+  function handleSaveUserPrompt(prompt) {
+    if (!currentUser) return;
+    const now = Date.now();
+    const nextPrompt = {
+      ...prompt,
+      userId: currentUser.id,
+      createdAt: prompt.createdAt || now,
+      updatedAt: now,
+    };
+    const nextPrompts = legacyPrompts.some((entry) => entry.id === nextPrompt.id)
+      ? legacyPrompts.map((entry) => (entry.id === nextPrompt.id ? nextPrompt : entry))
+      : [nextPrompt, ...legacyPrompts];
+    setLegacyPrompts(nextPrompts);
+    const otherUsersPrompts = loadPrompts().filter(
+      (entry) => entry.userId && entry.userId !== currentUser.id
+    );
+    savePrompts([...otherUsersPrompts, ...nextPrompts]);
+    setShowPromptEditor(false);
+    setEditingPrompt(null);
+    persistCloudPrompt(nextPrompt);
+    showToast(editingPrompt ? "提示词已更新" : "提示词已创建");
+  }
+
+  async function handleDeleteUserPrompt(promptId) {
+    const nextPrompts = legacyPrompts.filter((prompt) => prompt.id !== promptId);
+    setLegacyPrompts(nextPrompts);
+    const otherUsersPrompts = loadPrompts().filter(
+      (entry) => entry.userId && entry.userId !== currentUser?.id
+    );
+    savePrompts([...otherUsersPrompts, ...nextPrompts]);
+    setShowPromptEditor(false);
+    setEditingPrompt(null);
+    if (currentUser) {
+      setSyncState("loading");
+      try {
+        await deleteCloudPrompt(currentUser.id, promptId);
+        setSyncState("ok");
+      } catch (error) {
+        setSyncState("error");
+        showToast(authErrorMessage(error));
+        return;
+      }
+    }
+    showToast("提示词已删除");
+  }
+
+  function handleToggleUserPromptFavorite(promptId) {
+    const nextPrompts = legacyPrompts.map((prompt) =>
+      prompt.id === promptId ? { ...prompt, favorite: !prompt.favorite, updatedAt: Date.now() } : prompt
+    );
+    setLegacyPrompts(nextPrompts);
+    const otherUsersPrompts = loadPrompts().filter(
+      (entry) => entry.userId && entry.userId !== currentUser?.id
+    );
+    savePrompts([...otherUsersPrompts, ...nextPrompts]);
+    const updatedPrompt = nextPrompts.find((prompt) => prompt.id === promptId);
+    if (updatedPrompt) persistCloudPrompt(updatedPrompt);
+  }
+
   if (!currentUser && showLogin) {
     return (
       <>
         <LoginPage
+          authError={authError}
+          authLoading={authLoading}
           existingUser={existingUser}
-          onContinue={() => {
-            if (!existingUser) return;
-            setCurrentUser(saveCurrentUser(existingUser));
-            setShowLogin(false);
-            showToast("欢迎回来");
-          }}
           onLogin={handleLogin}
+          onRegister={handleRegister}
         />
         <Toast message={toastMessage} />
       </>
@@ -253,7 +477,9 @@ export default function App() {
               currentUser={currentUser}
               items={items}
               onCopyLegacyPrompt={handleCopyLegacyPrompt}
+              onCreatePrompt={handleNewUserPrompt}
               onOpenItem={handleOpenItem}
+              onOpenPromptLibrary={() => setCurrentView("myPrompts")}
               prompts={visibleLegacyPrompts}
               tools={toolProfiles}
             />
@@ -263,6 +489,17 @@ export default function App() {
               onOpenItem={handleOpenItem}
               onStartLearning={() => setShowLogin(true)}
               onViewChange={handleViewChange}
+            />
+          ) : currentView === "myPrompts" ? (
+            <V7UserPromptLibrary
+              prompts={visibleLegacyPrompts}
+              searchQuery={userPromptSearch}
+              syncState={syncState}
+              onCopy={handleCopyLegacyPrompt}
+              onEdit={handleEditUserPrompt}
+              onNew={handleNewUserPrompt}
+              onSearch={setUserPromptSearch}
+              onToggleFavorite={handleToggleUserPromptFavorite}
             />
           ) : ["pathDetail", "caseDetail", "articleDetail", "templateDetail"].includes(currentView) ? (
             <LearningDetailPage
@@ -305,6 +542,19 @@ export default function App() {
             />
           )}
       </main>
+
+      {showPromptEditor ? (
+        <PromptEditorModal
+          prompt={editingPrompt}
+          projects={projects}
+          onClose={() => {
+            setShowPromptEditor(false);
+            setEditingPrompt(null);
+          }}
+          onDelete={handleDeleteUserPrompt}
+          onSave={handleSaveUserPrompt}
+        />
+      ) : null}
 
       <Toast message={toastMessage} />
     </div>

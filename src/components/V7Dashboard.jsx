@@ -1,6 +1,15 @@
 import LegacyPromptShelf from "./LegacyPromptShelf.jsx";
 
-export default function V7Dashboard({ currentUser, items, onCopyLegacyPrompt, onOpenItem, prompts, tools }) {
+export default function V7Dashboard({
+  currentUser,
+  items,
+  onCopyLegacyPrompt,
+  onCreatePrompt,
+  onOpenItem,
+  onOpenPromptLibrary,
+  prompts,
+  tools,
+}) {
   const paths = items.filter((item) => item.type === "learningPath").slice(0, 3);
   const cases = items.filter((item) => item.type === "case").slice(0, 3);
   const next = paths[0];
@@ -70,7 +79,12 @@ export default function V7Dashboard({ currentUser, items, onCopyLegacyPrompt, on
         </div>
       </section>
 
-      <LegacyPromptShelf prompts={prompts} onCopyPrompt={onCopyLegacyPrompt} />
+      <LegacyPromptShelf
+        prompts={prompts}
+        onCopyPrompt={onCopyLegacyPrompt}
+        onCreatePrompt={onCreatePrompt}
+        onOpenLibrary={onOpenPromptLibrary}
+      />
     </div>
   );
 }

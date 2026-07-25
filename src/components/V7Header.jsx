@@ -74,7 +74,10 @@ export default function V7Header({
 
         {currentUser ? (
           <div className="v7-account">
-            <button className="v7-account__trigger" onClick={() => onViewChange("favorites")} type="button">
+            <button className="v7-account__library" onClick={() => onViewChange("myPrompts")} type="button">
+              我的提示词
+            </button>
+            <button className="v7-account__trigger" onClick={() => onViewChange("home")} type="button">
               <span>{(currentUser.name || "学").slice(0, 1).toUpperCase()}</span>
               <b>{currentUser.name || "我的学习"}</b>
             </button>

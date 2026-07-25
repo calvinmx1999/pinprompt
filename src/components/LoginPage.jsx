@@ -1,8 +1,9 @@
 import { useState } from "react";
 
-export default function LoginPage({ existingUser, onContinue, onLogin }) {
+export default function LoginPage({ authError, authLoading, existingUser, onLogin, onRegister }) {
   const [email, setEmail] = useState(existingUser?.email || "");
   const [password, setPassword] = useState("");
+  const [mode, setMode] = useState("login");
 
   return (
     <div className="login-shell">
@@ -23,15 +24,14 @@ export default function LoginPage({ existingUser, onContinue, onLogin }) {
       </div>
 
       <div className="login-card__head">
-        <h1>登录 PinPrompt</h1>
-        <p>当前为本地版本，登录后将读取本地保存的学习记录和收藏内容。</p>
+        <h1>{mode === "login" ? "登录 PinPrompt" : "创建 PinPrompt 账号"}</h1>
+        <p>登录后将读取原账号里的提示词、项目和收藏，并继续自动保存到云端。</p>
       </div>
 
-        {existingUser ? (
-          <button className="primary-button login-card__continue" onClick={onContinue} type="button">
-            继续使用 {existingUser.name} 的账号
-          </button>
-        ) : null}
+        <div className="login-mode-tabs">
+          <button className={mode === "login" ? "is-active" : ""} onClick={() => setMode("login")} type="button">登录</button>
+          <button className={mode === "register" ? "is-active" : ""} onClick={() => setMode("register")} type="button">注册</button>
+        </div>
 
         <div className="login-form">
           <label>
@@ -47,17 +47,23 @@ export default function LoginPage({ existingUser, onContinue, onLogin }) {
             <span>密码</span>
             <input
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="输入任意内容即可继续"
+              placeholder={mode === "login" ? "输入原账号密码" : "至少 6 位密码"}
               type="password"
               value={password}
             />
           </label>
+          {authError ? <div className="login-error">{authError}</div> : null}
           <button
             className="primary-button"
-            onClick={() => onLogin({ email, password })}
+            disabled={authLoading}
+            onClick={() =>
+              mode === "login"
+                ? onLogin({ email, password })
+                : onRegister({ email, password })
+            }
             type="button"
           >
-            登录
+            {authLoading ? "正在连接..." : mode === "login" ? "登录" : "创建账号"}
           </button>
         </div>
       </div>
