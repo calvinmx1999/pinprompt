@@ -19,9 +19,18 @@ featured: true
 status: published
 publishedAt: 2026-07-27
 updatedAt: 2026-07-27
+lastReviewedAt: 2026-07-27
 version: "1.0"
+applicableVersions: []
+changeSummary: 增加了来源信息和世界模型的能力边界说明
 relatedIds:
   - knowledge_aigc_001
+sources:
+  - title: "Genie 3: A new frontier for world models"
+    publisher: Google DeepMind
+    url: https://deepmind.google/blog/genie-3-a-new-frontier-for-world-models/
+    publishedAt: 2025-08-05
+    accessedAt: 2026-07-27
 ---
 
 ## 发生了什么

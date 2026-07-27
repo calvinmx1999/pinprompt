@@ -91,7 +91,13 @@ function normalizeArray(value) {
 function normalizeContent(raw, filePath, index) {
   const { data, markdown } = parseMarkdown(raw, filePath);
   const folderType = filePath.split("/").at(-2)?.replace(/s$/, "");
-  const type = CONTENT_TYPES[data.type] ? data.type : CONTENT_TYPES[folderType] ? folderType : "";
+  const declaredType = data.type === "learning-path" ? "learningPath" : data.type;
+  const inferredType = folderType === "learning-path" ? "learningPath" : folderType;
+  const type = CONTENT_TYPES[declaredType]
+    ? declaredType
+    : CONTENT_TYPES[inferredType]
+      ? inferredType
+      : "";
 
   const item = {
     id: String(data.id || `invalid_content_${index}`),
@@ -109,17 +115,32 @@ function normalizeContent(raw, filePath, index) {
     status: ["draft", "published", "archived"].includes(data.status) ? data.status : "draft",
     publishedAt: String(data.publishedAt || ""),
     updatedAt: String(data.updatedAt || data.publishedAt || ""),
+    lastReviewedAt: String(data.lastReviewedAt || data.updatedAt || ""),
     version: String(data.version || "1.0"),
+    applicableVersions: normalizeArray(data.applicableVersions),
+    changeSummary: String(data.changeSummary || ""),
     relatedIds: normalizeArray(data.relatedIds),
     moduleId: String(data.moduleId || ""),
     chapterId: String(data.chapterId || ""),
+    moduleIds: normalizeArray(data.moduleIds),
+    sources: Array.isArray(data.sources)
+      ? data.sources.map((source) => ({
+        title: String(source?.title || ""),
+        publisher: String(source?.publisher || ""),
+        url: String(source?.url || ""),
+        publishedAt: String(source?.publishedAt || ""),
+        accessedAt: String(source?.accessedAt || ""),
+      }))
+      : [],
+    replacementId: String(data.replacementId || ""),
+    archiveReason: String(data.archiveReason || ""),
     markdown: String(markdown || "").trim(),
-    sourcePath: filePath,
+    sourcePath: filePath.replace("../content/", "src/content/"),
   };
 
   const missing = REQUIRED_FIELDS.filter((field) => data[field] === undefined);
   if (missing.length) warn(`字段缺失: ${missing.join(", ")}`, filePath);
-  if (!CONTENT_TYPES[item.type] || item.type === "learningPath") warn("内容类型不正确", filePath);
+  if (!CONTENT_TYPES[item.type]) warn("内容类型不正确", filePath);
   if (!item.markdown) warn("Markdown 正文为空", filePath);
 
   return item;
@@ -136,6 +157,10 @@ for (const item of parsedContent) {
   duplicateKey.add(key);
 }
 
+export function isContentPreviewEnabled() {
+  return import.meta.env.DEV || import.meta.env.VITE_CONTENT_PREVIEW === "true";
+}
+
 function canPreviewDrafts() {
   if (import.meta.env.VITE_CONTENT_PREVIEW === "true") return true;
   if (!import.meta.env.DEV || typeof window === "undefined") return false;
@@ -143,7 +168,7 @@ function canPreviewDrafts() {
 }
 
 function visibleContent() {
-  return parsedContent.filter((item) =>
+  return parsedContent.filter((item) => item.type !== "learningPath").filter((item) =>
     canPreviewDrafts() ? item.status !== "archived" : item.status === "published"
   );
 }
@@ -166,14 +191,30 @@ function normalizePath(path, index) {
     status: ["draft", "published", "archived"].includes(path.status) ? path.status : "draft",
     publishedAt: String(path.publishedAt || ""),
     updatedAt: String(path.updatedAt || ""),
+    lastReviewedAt: String(path.lastReviewedAt || path.updatedAt || ""),
     version: String(path.version || "1.0"),
+    applicableVersions: normalizeArray(path.applicableVersions),
+    changeSummary: String(path.changeSummary || ""),
     relatedIds: normalizeArray(path.relatedIds),
     moduleIds: normalizeArray(path.moduleIds),
+    sources: [],
+    replacementId: String(path.replacementId || ""),
+    archiveReason: String(path.archiveReason || ""),
+    sourcePath: "src/content/catalog/learningPaths.json",
     markdown: "",
   };
 }
 
-const learningPaths = learningPathsCatalog.map(normalizePath);
+const catalogLearningPaths = learningPathsCatalog.map(normalizePath);
+const markdownLearningPaths = parsedContent.filter((item) => item.type === "learningPath");
+const learningPaths = [
+  ...catalogLearningPaths,
+  ...markdownLearningPaths.filter(
+    (item) => !catalogLearningPaths.some(
+      (catalogItem) => catalogItem.id === item.id || catalogItem.slug === item.slug
+    )
+  ),
+];
 const modules = modulesCatalog.map((module, index) => ({
   ...module,
   id: String(module.id || `module_${index}`),
@@ -211,8 +252,51 @@ export function getContentBySlug(type, slug) {
   return getContentByType(type).find((item) => item.slug === slug) || null;
 }
 
+export function getRoutableContentBySlug(type, slug) {
+  return getContentBySlug(type, slug)
+    || getAllContentForStudio().find(
+      (item) => item.type === type && item.slug === slug && item.status === "archived"
+    )
+    || null;
+}
+
 export function getContentById(id) {
   return getAllContent().find((item) => item.id === id) || null;
+}
+
+export function getAnyContentById(id) {
+  return getAllContentForStudio().find((item) => item.id === id) || null;
+}
+
+export function getAllContentForStudio() {
+  return [
+    ...learningPaths,
+    ...parsedContent.filter((item) => item.type !== "learningPath"),
+  ];
+}
+
+export function getAllModules() {
+  return [...modules];
+}
+
+export function getContentIssues(item) {
+  if (!item) return [];
+  const issues = [];
+  if (!item.summary) issues.push({ level: "error", message: "缺少摘要" });
+  if (!item.updatedAt) issues.push({ level: "error", message: "缺少更新时间" });
+  if (!item.markdown && item.type !== "learningPath") {
+    issues.push({ level: item.status === "published" ? "error" : "warning", message: "正文为空" });
+  }
+  if (item.type === "frontier" && !item.sources.length) {
+    issues.push({
+      level: item.status === "published" ? "error" : "warning",
+      message: "缺少参考来源",
+    });
+  }
+  if (item.status === "published" && /(?:TODO|待补充|示例正文)/i.test(item.markdown)) {
+    issues.push({ level: "error", message: "正文含待处理标记" });
+  }
+  return issues;
 }
 
 export function getFeaturedContent(type, limit = 4) {
@@ -261,6 +345,9 @@ export function searchContent(query, filters = {}) {
       item.summary,
       item.category,
       item.markdown,
+      item.changeSummary,
+      ...item.applicableVersions,
+      ...item.sources.flatMap((source) => [source.title, source.publisher]),
       ...item.tags,
       ...item.tools,
     ]

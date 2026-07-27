@@ -20,7 +20,11 @@ featured: true
 status: published
 publishedAt: 2026-07-27
 updatedAt: 2026-07-27
+lastReviewedAt: 2026-07-27
 version: "1.0"
+applicableVersions:
+  - ChatGPT Web 当前版本
+changeSummary: 补充适用版本说明
 relatedIds:
   - knowledge_prompt_001
   - workflow_pdf_001

@@ -2,16 +2,19 @@ import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   CONTENT_TYPES,
+  getAnyContentById,
   getAdjacentContent,
-  getContentBySlug,
   getContentUrl,
   getKnowledgeByModule,
   getModulesByPath,
   getRelatedContent,
+  getRoutableContentBySlug,
 } from "../../lib/contentLoader.js";
 import { recordContentView } from "../../lib/contentStore.js";
 import ContentCard from "./ContentCard.jsx";
+import ContentMeta from "./ContentMeta.jsx";
 import ContentRenderer from "./ContentRenderer.jsx";
+import ContentSources from "./ContentSources.jsx";
 
 function updateMeta(item) {
   const title = `${item.title}｜PinPrompt 拼好词`;
@@ -76,11 +79,11 @@ export default function ContentDetailPage({
 }) {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const item = getContentBySlug(type, slug);
+  const item = getRoutableContentBySlug(type, slug);
 
   useEffect(() => {
     if (!item) return;
-    recordContentView(item);
+    if (item.status !== "archived") recordContentView(item);
     updateMeta(item);
   }, [item]);
 
@@ -91,6 +94,27 @@ export default function ContentDetailPage({
         <h1>没有找到这篇内容</h1>
         <p>链接可能已经修改，或者内容尚未发布。</p>
         <button onClick={() => navigate(CONTENT_TYPES[type]?.listPath || "/")} type="button">返回栏目</button>
+      </section>
+    );
+  }
+
+  if (item.status === "archived") {
+    const replacement = item.replacementId ? getAnyContentById(item.replacementId) : null;
+    return (
+      <section className="archived-content">
+        <span>内容归档</span>
+        <h1>这篇内容已经归档</h1>
+        <p>{item.archiveReason || "这篇内容已经停止维护，不再出现在正式列表和搜索结果中。"}</p>
+        <div>
+          <button onClick={() => navigate(CONTENT_TYPES[item.type]?.listPath || "/")} type="button">
+            返回{CONTENT_TYPES[item.type]?.label || "栏目"}
+          </button>
+          {replacement ? (
+            <button onClick={() => navigate(getContentUrl(replacement))} type="button">
+              查看替代内容：{replacement.title}
+            </button>
+          ) : null}
+        </div>
       </section>
     );
   }
@@ -137,13 +161,7 @@ export default function ContentDetailPage({
           )}
         </main>
         <aside className="modular-detail__rail">
-          <strong>内容信息</strong>
-          <dl>
-            <div><dt>分类</dt><dd>{item.category}</dd></div>
-            <div><dt>难度</dt><dd>{item.level}</dd></div>
-            <div><dt>阅读</dt><dd>{item.readTime}</dd></div>
-            <div><dt>版本</dt><dd>{item.version}</dd></div>
-          </dl>
+          <ContentMeta item={item} />
           {item.tags.length ? (
             <div className="modular-detail__rail-tags">
               {item.tags.map((tag) => <span key={tag}>#{tag}</span>)}
@@ -151,6 +169,8 @@ export default function ContentDetailPage({
           ) : null}
         </aside>
       </div>
+
+      <ContentSources sources={item.sources} />
 
       {related.length ? (
         <section className="modular-related">

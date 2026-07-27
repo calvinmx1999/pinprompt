@@ -59,10 +59,38 @@ function PromptBlock({ children, onToast }) {
 
 function MarkdownImage({ alt, src }) {
   const [failed, setFailed] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    if (!expanded) return undefined;
+    function closeOnEscape(event) {
+      if (event.key === "Escape") setExpanded(false);
+    }
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [expanded]);
+
   if (failed) {
     return <span className="content-image-fallback">图片暂时无法显示：{alt || "未命名图片"}</span>;
   }
-  return <img alt={alt || ""} loading="lazy" onError={() => setFailed(true)} src={src} />;
+  return (
+    <figure className="content-figure">
+      <button aria-label={`放大图片：${alt || "内容图片"}`} onClick={() => setExpanded(true)} type="button">
+        <img alt={alt || ""} loading="lazy" onError={() => setFailed(true)} src={src} />
+      </button>
+      {alt ? <figcaption>{alt}</figcaption> : null}
+      {expanded ? (
+        <button
+          aria-label="关闭大图"
+          className="content-image-lightbox"
+          onClick={() => setExpanded(false)}
+          type="button"
+        >
+          <img alt={alt || ""} src={src} />
+        </button>
+      ) : null}
+    </figure>
+  );
 }
 
 export default function ContentRenderer({ markdown, onToast }) {
@@ -101,6 +129,10 @@ export default function ContentRenderer({ markdown, onToast }) {
           },
           img({ alt, src }) {
             return <MarkdownImage alt={alt} src={src} />;
+          },
+          p({ children }) {
+            if (children?.type === MarkdownImage) return children;
+            return <p>{children}</p>;
           },
           pre({ children }) {
             if (

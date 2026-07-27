@@ -8,6 +8,7 @@ import V7UserPromptLibrary from "./components/V7UserPromptLibrary.jsx";
 import ContentDetailPage from "./components/content/ContentDetailPage.jsx";
 import ContentHomePage from "./components/content/ContentHomePage.jsx";
 import ContentListPage from "./components/content/ContentListPage.jsx";
+import ContentStudioPage from "./components/content/ContentStudioPage.jsx";
 import NotFoundPage from "./components/content/NotFoundPage.jsx";
 import {
   clearCurrentUser,
@@ -36,6 +37,7 @@ import {
   getReadingHistory,
   toggleContentFavorite,
 } from "./lib/contentStore.js";
+import { isContentPreviewEnabled } from "./lib/contentLoader.js";
 
 const LIST_TITLES = {
   "/": "PinPrompt 拼好词｜AIGC学习平台",
@@ -416,6 +418,14 @@ export default function App() {
           <Route path="/templates/:slug" element={<ContentDetailPage favoriteIds={favoriteIds} onToast={showToast} onToggleFavorite={handleToggleContentFavorite} type="template" />} />
           <Route path="/favorites" element={<ContentListPage favoriteIds={favoriteIds} mode="favorite" onToggleFavorite={handleToggleContentFavorite} />} />
           <Route path="/search" element={<ContentListPage favoriteIds={favoriteIds} mode="search" onToggleFavorite={handleToggleContentFavorite} />} />
+          <Route
+            path="/content-studio"
+            element={
+              isContentPreviewEnabled()
+                ? <ContentStudioPage onCopy={copyText} />
+                : <NotFoundPage />
+            }
+          />
           <Route
             path="/my-prompts"
             element={
