@@ -4,13 +4,14 @@ const SUPABASE_PUBLISHABLE_KEY =
   process.env.SUPABASE_PUBLISHABLE_KEY ||
   "sb_publishable_Z4b-LXyOAGf5rECj64ILZA_Pu-mTrIk";
 
+const ALLOWED_PATHS = ["/auth/v1/", "/rest/v1/"];
+
 function targetUrl(request) {
-  const incoming = new URL(request.url, "https://pinprompt.art");
-  const prefix = "/api/supabase";
-  const pathname = incoming.pathname.startsWith(prefix)
-    ? incoming.pathname.slice(prefix.length)
-    : incoming.pathname;
-  return new URL(`${pathname || "/"}${incoming.search}`, SUPABASE_ORIGIN);
+  const path = String(request.query?.path || "");
+  if (!ALLOWED_PATHS.some((prefix) => path.startsWith(prefix))) {
+    throw new Error("unsupported_cloud_path");
+  }
+  return new URL(path, SUPABASE_ORIGIN);
 }
 
 function requestBody(request) {
@@ -48,15 +49,21 @@ export default async function handler(request, response) {
 
     const contentType = upstream.headers.get("content-type");
     if (contentType) response.setHeader("Content-Type", contentType);
-    const location = upstream.headers.get("location");
-    if (location) response.setHeader("Location", location);
 
-    const payload = Buffer.from(await upstream.arrayBuffer());
-    response.status(upstream.status).send(payload);
-  } catch {
-    response.status(502).json({
-      error: "cloud_unavailable",
-      message: "云端暂时无法连接，请稍后重试。",
+    const payload = await upstream.text();
+    response.status(upstream.status);
+    if (payload) {
+      response.send(payload);
+    } else {
+      response.end();
+    }
+  } catch (error) {
+    const unsupported = error?.message === "unsupported_cloud_path";
+    response.status(unsupported ? 400 : 502).json({
+      error: unsupported ? "unsupported_cloud_path" : "cloud_unavailable",
+      message: unsupported
+        ? "不支持的云端请求。"
+        : "云端暂时无法连接，请稍后重试。",
     });
   }
 }

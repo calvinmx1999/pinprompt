@@ -9,7 +9,10 @@ export default defineConfig({
       "/api/supabase": {
         target: "https://zayfzpsrhxiaetrcttko.supabase.co",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/supabase/, ""),
+        rewrite: (path) => {
+          const incoming = new URL(path, "http://localhost");
+          return incoming.searchParams.get("path") || "/";
+        },
       },
     },
   },

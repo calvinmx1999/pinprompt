@@ -2,24 +2,34 @@ import { createClient } from "@supabase/supabase-js";
 
 const DIRECT_SUPABASE_URL =
   import.meta.env.VITE_SUPABASE_URL || "https://zayfzpsrhxiaetrcttko.supabase.co";
-const SUPABASE_URL =
-  typeof window !== "undefined" && /^https?:$/.test(window.location.protocol)
-    ? `${window.location.origin}/api/supabase`
-    : DIRECT_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
   "sb_publishable_Z4b-LXyOAGf5rECj64ILZA_Pu-mTrIk";
 
 let client;
 
+function cloudFetch(input, init) {
+  if (typeof window === "undefined" || !/^https?:$/.test(window.location.protocol)) {
+    return fetch(input, init);
+  }
+
+  const target = new URL(typeof input === "string" ? input : input.url);
+  const path = `${target.pathname}${target.search}`;
+  const proxyUrl = `${window.location.origin}/api/supabase?path=${encodeURIComponent(path)}`;
+  return fetch(proxyUrl, init);
+}
+
 export function getSupabase() {
   if (!client) {
-    client = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    client = createClient(DIRECT_SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
         storageKey: "sb-zayfzpsrhxiaetrcttko-auth-token",
+      },
+      global: {
+        fetch: cloudFetch,
       },
       realtime: {
         params: { eventsPerSecond: 2 },
