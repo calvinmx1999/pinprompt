@@ -1,9 +1,14 @@
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+
 const NAV_ITEMS = [
-  { id: "home", label: "首页" },
-  { id: "learningPaths", label: "系统课程" },
-  { id: "cases", label: "实战教程" },
-  { id: "articles", label: "工具指南" },
-  { id: "templates", label: "提示词库" },
+  { path: "/", label: "首页" },
+  { path: "/learn", label: "学习路径" },
+  { path: "/knowledge", label: "知识点" },
+  { path: "/workflows", label: "工作流" },
+  { path: "/tools", label: "工具库" },
+  { path: "/frontier", label: "AI前沿" },
+  { path: "/templates", label: "提示词模板" },
 ];
 
 function BrandMark() {
@@ -18,53 +23,56 @@ function BrandMark() {
 
 export default function V7Header({
   currentUser,
-  currentView,
   onLoginRequest,
   onLogout,
-  onSearch,
-  onViewChange,
-  searchQuery,
 }) {
-  const activeView =
-    currentView === "pathDetail"
-      ? "learningPaths"
-      : currentView === "caseDetail"
-        ? "cases"
-        : currentView === "articleDetail"
-          ? "articles"
-          : currentView;
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    if (location.pathname !== "/search") setQuery("");
+  }, [location.pathname]);
+
+  function isActive(path) {
+    if (path === "/") return location.pathname === "/";
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  }
+
+  function submitSearch(event) {
+    event.preventDefault();
+    const keyword = query.trim();
+    navigate(keyword ? `/search?q=${encodeURIComponent(keyword)}` : "/search");
+  }
 
   return (
     <header className="v7-header">
       <div className="v7-header__inner">
-        <button className="v7-brand" onClick={() => onViewChange("home")} type="button">
+        <button className="v7-brand" onClick={() => navigate("/")} type="button">
           <BrandMark />
           <span className="v7-brand-copy">
-            <strong>
-              <span>Pin</span>
-              <b>Prompt</b>
-            </strong>
-            <small>AIGC 实战学习</small>
+            <strong><span>Pin</span><b>Prompt</b></strong>
+            <small>AIGC 学习与提示词</small>
           </span>
         </button>
 
-        <label className="v7-header-search">
-          <span aria-hidden="true">⌕</span>
+        <form className="v7-header-search" onSubmit={submitSearch}>
+          <button aria-label="提交搜索" type="submit">⌕</button>
           <input
-            aria-label="搜索课程、教程和提示词"
-            onChange={(event) => onSearch(event.target.value)}
-            placeholder="搜索课程、案例、工具、提示词..."
-            value={searchQuery}
+            aria-label="搜索知识、工作流、工具和提示词"
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="搜索知识、工作流、工具、提示词..."
+            value={query}
           />
           <kbd>⌘K</kbd>
-        </label>
+        </form>
 
         <nav className="v7-nav" aria-label="主导航">
           {NAV_ITEMS.map((item) => (
             <button
-              className={activeView === item.id ? "is-active" : ""}
-              key={item.id}
-              onClick={() => onViewChange(item.id)}
+              className={isActive(item.path) ? "is-active" : ""}
+              key={item.path}
+              onClick={() => navigate(item.path)}
               type="button"
             >
               {item.label}
@@ -74,21 +82,25 @@ export default function V7Header({
 
         {currentUser ? (
           <div className="v7-account">
-            <button className="v7-account__library" onClick={() => onViewChange("myPrompts")} type="button">
+            <button className="v7-account__library" onClick={() => navigate("/favorites")} type="button">
+              我的收藏
+            </button>
+            <button className="v7-account__library" onClick={() => navigate("/my-prompts")} type="button">
               我的提示词
             </button>
-            <button className="v7-account__trigger" onClick={() => onViewChange("home")} type="button">
+            <button className="v7-account__trigger" onClick={() => navigate("/")} type="button">
               <span>{(currentUser.name || "学").slice(0, 1).toUpperCase()}</span>
               <b>{currentUser.name || "我的学习"}</b>
             </button>
-            <button className="v7-account__logout" onClick={onLogout} type="button">
-              退出
-            </button>
+            <button className="v7-account__logout" onClick={onLogout} type="button">退出</button>
           </div>
         ) : (
-          <button className="v7-start-button" onClick={onLoginRequest} type="button">
-            开始学习
-          </button>
+          <div className="v7-account v7-account--guest">
+            <button className="v7-account__library" onClick={() => navigate("/favorites")} type="button">
+              我的收藏
+            </button>
+            <button className="v7-start-button" onClick={onLoginRequest} type="button">登录</button>
+          </div>
         )}
       </div>
     </header>

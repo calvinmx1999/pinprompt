@@ -1,0 +1,56 @@
+[
+  {
+    "id": "module_foundation",
+    "pathId": "path_aigc_fullstack",
+    "number": "01",
+    "title": "AI与AIGC基础认知",
+    "summary": "理解生成式AI的能力边界、常见概念和基本使用方式。",
+    "status": "published",
+    "chapterIds": ["chapter_aigc_basic"]
+  },
+  {
+    "id": "module_llm",
+    "pathId": "path_aigc_fullstack",
+    "number": "02",
+    "title": "大模型应用与Prompt工程",
+    "summary": "学习如何使用大模型处理写作、搜索、分析和办公任务。",
+    "status": "published",
+    "chapterIds": ["chapter_prompt_basic", "chapter_ai_research"]
+  },
+  {
+    "id": "module_image",
+    "pathId": "path_aigc_fullstack",
+    "number": "03",
+    "title": "AI图像创作",
+    "summary": "认识文生图、图像编辑、风格控制与视觉表达。",
+    "status": "published",
+    "chapterIds": ["chapter_image_basic"]
+  },
+  {
+    "id": "module_video",
+    "pathId": "path_aigc_fullstack",
+    "number": "04",
+    "title": "AI视频创作",
+    "summary": "从镜头描述、首尾帧到连续视频的生成方法。",
+    "status": "published",
+    "chapterIds": ["chapter_video_basic"]
+  },
+  {
+    "id": "module_agent",
+    "pathId": "path_aigc_fullstack",
+    "number": "05",
+    "title": "智能体与自动化",
+    "summary": "理解工具调用、任务拆解和轻量自动化的基本结构。",
+    "status": "published",
+    "chapterIds": ["chapter_agent_basic"]
+  },
+  {
+    "id": "module_safety",
+    "pathId": "path_aigc_fullstack",
+    "number": "06",
+    "title": "安全、版权与判断",
+    "summary": "识别幻觉、隐私、版权和内容可信度问题。",
+    "status": "published",
+    "chapterIds": ["chapter_safety_basic"]
+  }
+]

@@ -1,0 +1,29 @@
+[
+  {
+    "id": "path_aigc_fullstack",
+    "slug": "aigc-fullstack",
+    "type": "learningPath",
+    "title": "AIGC全栈应用与智能体实战",
+    "summary": "从AI基础认知到多模态创作、智能体和AI应用开发，建立可以随时查阅的知识框架。",
+    "category": "系统学习",
+    "tags": ["AIGC", "全栈", "入门"],
+    "tools": ["ChatGPT", "Seedream"],
+    "level": "入门",
+    "readTime": "6个模块",
+    "cover": "/v7-assets/v7-07-697f4e15b0.webp",
+    "featured": true,
+    "status": "published",
+    "publishedAt": "2026-07-27",
+    "updatedAt": "2026-07-27",
+    "version": "1.0",
+    "relatedIds": [],
+    "moduleIds": [
+      "module_foundation",
+      "module_llm",
+      "module_image",
+      "module_video",
+      "module_agent",
+      "module_safety"
+    ]
+  }
+]

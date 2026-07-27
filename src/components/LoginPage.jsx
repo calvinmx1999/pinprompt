@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function LoginPage({ authError, authLoading, existingUser, onLogin, onRegister }) {
+export default function LoginPage({ authError, authLoading, existingUser, onClose, onLogin, onRegister }) {
   const [email, setEmail] = useState(existingUser?.email || "");
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState("login");
@@ -8,6 +8,7 @@ export default function LoginPage({ authError, authLoading, existingUser, onLogi
   return (
     <div className="login-shell">
       <div className="login-card">
+        <button aria-label="关闭登录" className="login-card__close" onClick={onClose} type="button">×</button>
         <div className="brand-block brand-block--login">
           <div className="brand-stack">
             <span className="brand-card brand-card--back-pink" />
