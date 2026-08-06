@@ -4,6 +4,7 @@ import LoginPage from "./components/LoginPage.jsx";
 import PromptEditorModal from "./components/PromptEditorModal.jsx";
 import Toast from "./components/Toast.jsx";
 import V7Header from "./components/V7Header.jsx";
+import PromptStudioPage from "./components/PromptStudioPage.jsx";
 import V7UserPromptLibrary from "./components/V7UserPromptLibrary.jsx";
 import ContentDetailPage from "./components/content/ContentDetailPage.jsx";
 import ContentHomePage from "./components/content/ContentHomePage.jsx";
@@ -49,6 +50,7 @@ const LIST_TITLES = {
   "/templates": "提示词模板｜PinPrompt 拼好词",
   "/favorites": "我的收藏｜PinPrompt 拼好词",
   "/my-prompts": "我的提示词｜PinPrompt 拼好词",
+  "/studio": "提示词工作台｜PinPrompt 拼好词",
   "/search": "搜索｜PinPrompt 拼好词",
 };
 
@@ -112,7 +114,11 @@ export default function App() {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (authReady && location.pathname === "/my-prompts" && !currentUser) {
+    if (
+      authReady &&
+      (location.pathname === "/my-prompts" || location.pathname.startsWith("/studio")) &&
+      !currentUser
+    ) {
       setShowLogin(true);
     }
   }, [authReady, currentUser, location.pathname]);
@@ -208,7 +214,7 @@ export default function App() {
       const user = await signInCloud(email, password);
       await activateCloudUser(user);
       setShowLogin(false);
-      navigate("/my-prompts");
+      navigate(location.pathname.startsWith("/studio") ? "/studio" : "/my-prompts");
       showToast("账号与提示词已同步");
     } catch (error) {
       setAuthError(authErrorMessage(error));
@@ -236,7 +242,7 @@ export default function App() {
       }
       await activateCloudUser(result.user, [], []);
       setShowLogin(false);
-      navigate("/my-prompts");
+      navigate(location.pathname.startsWith("/studio") ? "/studio" : "/my-prompts");
       showToast("账号创建成功");
     } catch (error) {
       setAuthError(authErrorMessage(error));
@@ -280,9 +286,9 @@ export default function App() {
     savePrompts([...otherUsersPrompts, ...nextPrompts]);
   }
 
-  function handleCopyLegacyPrompt(prompt) {
-    if (!prompt?.content) return;
-    copyText(prompt.content, "已复制收藏提示词");
+  function handleCopyLegacyPrompt(prompt, content = prompt?.content, successMessage = "已复制收藏提示词") {
+    if (!prompt || !content) return;
+    copyText(content, successMessage);
     const nextPrompts = legacyPrompts.map((entry) =>
       entry.id === prompt.id
         ? { ...entry, usedCount: (entry.usedCount || 0) + 1, lastUsedAt: new Date().toISOString() }
@@ -359,9 +365,9 @@ export default function App() {
     showToast(next.includes(itemId) ? "已加入收藏" : "已取消收藏");
   }
 
-  function openPersonalPrompts() {
-    if (currentUser) navigate("/my-prompts");
-    else setShowLogin(true);
+  function openPromptStudio() {
+    navigate("/studio");
+    if (!currentUser) setShowLogin(true);
   }
 
   if (showLogin) {
@@ -373,7 +379,7 @@ export default function App() {
           existingUser={existingUser}
           onClose={() => {
             setShowLogin(false);
-            if (location.pathname === "/my-prompts") navigate("/");
+            if (location.pathname === "/my-prompts" || location.pathname.startsWith("/studio")) navigate("/");
           }}
           onLogin={handleLogin}
           onRegister={handleRegister}
@@ -383,15 +389,20 @@ export default function App() {
     );
   }
 
-  return (
-    <div className="v7-site">
-      <V7Header
-        currentUser={currentUser}
-        onLoginRequest={() => setShowLogin(true)}
-        onLogout={handleLogout}
-      />
+  const isStudio = location.pathname.startsWith("/studio");
 
-      <main className="v7-main">
+  return (
+    <div className={isStudio ? "studio-route" : "v7-site"}>
+      {!isStudio ? (
+        <V7Header
+          currentUser={currentUser}
+          onLoginRequest={() => setShowLogin(true)}
+          onLogout={handleLogout}
+          onStudioRequest={() => navigate("/studio")}
+        />
+      ) : null}
+
+      <main className={isStudio ? "studio-route__main" : "v7-main"}>
         <Routes>
           <Route
             path="/"
@@ -399,7 +410,7 @@ export default function App() {
               <ContentHomePage
                 favoriteIds={favoriteIds}
                 history={history}
-                onLoginRequest={openPersonalPrompts}
+                onLoginRequest={openPromptStudio}
                 onToggleFavorite={handleToggleContentFavorite}
               />
             }
@@ -446,6 +457,35 @@ export default function App() {
               ) : (
                 <section className="modular-auth-loading">
                   <p>{authReady ? "请登录后查看自己的提示词。" : "正在恢复账号..."}</p>
+                  {authReady ? <button onClick={() => setShowLogin(true)} type="button">登录账号</button> : null}
+                </section>
+              )
+            }
+          />
+          <Route
+            path="/studio"
+            element={
+              currentUser ? (
+                <PromptStudioPage
+                  currentUser={currentUser}
+                  onBack={() => navigate("/")}
+                  onCopyPrompt={handleCopyLegacyPrompt}
+                  onCopyText={copyText}
+                  onEditPrompt={(prompt) => {
+                    setEditingPrompt(prompt);
+                    setShowPromptEditor(true);
+                  }}
+                  onLogout={handleLogout}
+                  onNewPrompt={handleNewUserPrompt}
+                  onToast={showToast}
+                  onTogglePromptFavorite={handleToggleUserPromptFavorite}
+                  projects={projects}
+                  prompts={visibleLegacyPrompts}
+                  syncState={syncState}
+                />
+              ) : (
+                <section className="modular-auth-loading">
+                  <p>{authReady ? "请登录后进入提示词工作台。" : "正在恢复账号..."}</p>
                   {authReady ? <button onClick={() => setShowLogin(true)} type="button">登录账号</button> : null}
                 </section>
               )

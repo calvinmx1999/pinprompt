@@ -151,7 +151,7 @@ export default function ContentHomePage({
           <h2>收藏自己的提示词，继续积累创作方法。</h2>
           <p>原账号中的个人提示词仍然独立保存并同步到云端。</p>
         </div>
-        <button onClick={onLoginRequest} type="button">进入我的提示词</button>
+        <button onClick={onLoginRequest} type="button">进入提示词工作台</button>
       </section>
     </div>
   );

@@ -25,6 +25,7 @@ export default function V7Header({
   currentUser,
   onLoginRequest,
   onLogout,
+  onStudioRequest,
 }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -82,11 +83,12 @@ export default function V7Header({
 
         {currentUser ? (
           <div className="v7-account">
+            <button className="v7-studio-button" onClick={onStudioRequest} type="button">
+              <span aria-hidden="true">✦</span>
+              提示词工作台
+            </button>
             <button className="v7-account__library" onClick={() => navigate("/favorites")} type="button">
               我的收藏
-            </button>
-            <button className="v7-account__library" onClick={() => navigate("/my-prompts")} type="button">
-              我的提示词
             </button>
             <button className="v7-account__trigger" onClick={() => navigate("/")} type="button">
               <span>{(currentUser.name || "学").slice(0, 1).toUpperCase()}</span>
@@ -96,6 +98,10 @@ export default function V7Header({
           </div>
         ) : (
           <div className="v7-account v7-account--guest">
+            <button className="v7-studio-button" onClick={onStudioRequest} type="button">
+              <span aria-hidden="true">✦</span>
+              提示词工作台
+            </button>
             <button className="v7-account__library" onClick={() => navigate("/favorites")} type="button">
               我的收藏
             </button>

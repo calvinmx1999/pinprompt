@@ -10,8 +10,11 @@ export default function PromptSidebar({
   selectedProjectId,
   onProjectSelect,
   promptCounts,
+  onBackToLearning,
+  showDataActions = true,
+  navItems: customNavItems,
 }) {
-  const navItems = [
+  const navItems = customNavItems || [
     { id: "library", label: "提示词库", count: promptCounts.all },
     { id: "assembler", label: "拼装器", count: promptCounts.fragments ?? 0 },
     { id: "workflows", label: "工作流", count: promptCounts.workflows ?? 0 },
@@ -22,6 +25,12 @@ export default function PromptSidebar({
 
   return (
     <aside className="sidebar">
+      {onBackToLearning ? (
+        <button className="studio-back-link" onClick={onBackToLearning} type="button">
+          <span aria-hidden="true">←</span>
+          返回 PinPrompt 学习站
+        </button>
+      ) : null}
       <div className="brand-block">
         <div className="brand-stack">
           <span className="brand-card brand-card--back-pink" />
@@ -57,9 +66,11 @@ export default function PromptSidebar({
       <div className="sidebar-section sidebar-section--grow">
         <div className="sidebar-section__label sidebar-section__label--row">
           <span>项目</span>
-          <button onClick={onCreateProject} type="button">
-            ＋
-          </button>
+          {onCreateProject ? (
+            <button onClick={onCreateProject} type="button">
+              ＋
+            </button>
+          ) : null}
         </div>
         <div className="project-list">
           {projects.map((project) => (
@@ -79,14 +90,16 @@ export default function PromptSidebar({
         </div>
       </div>
 
-      <div className="sidebar-actions">
-        <button className="sidebar-action-button" onClick={onImport} type="button">
-          导入
-        </button>
-        <button className="sidebar-action-button" onClick={onExport} type="button">
-          导出
-        </button>
-      </div>
+      {showDataActions ? (
+        <div className="sidebar-actions">
+          <button className="sidebar-action-button" onClick={onImport} type="button">
+            导入
+          </button>
+          <button className="sidebar-action-button" onClick={onExport} type="button">
+            导出
+          </button>
+        </div>
+      ) : null}
 
       {currentUser ? (
         <div className="account-card">

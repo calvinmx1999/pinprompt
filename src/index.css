@@ -2421,6 +2421,249 @@ button {
   }
 }
 
+/* Prompt Studio subsite */
+.v7-studio-button {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--v7-ink);
+  color: white;
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+  transition: background 180ms ease, transform 180ms ease;
+}
+
+.v7-studio-button:hover {
+  background: #ee2e72;
+  transform: translateY(-1px);
+}
+
+.v7-studio-button:focus-visible,
+.studio-back-link:focus-visible,
+.studio-header button:focus-visible {
+  outline: 3px solid rgba(52, 89, 242, 0.28);
+  outline-offset: 2px;
+}
+
+.studio-route,
+.studio-route__main {
+  min-height: 100vh;
+}
+
+.prompt-studio-site {
+  background:
+    radial-gradient(circle at 1px 1px, rgba(126, 104, 65, 0.12) 1px, transparent 0),
+    #f6f3ec;
+  background-size: 22px 22px;
+}
+
+.prompt-studio-site .sidebar {
+  gap: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: none;
+}
+
+.studio-back-link {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #657085;
+  font-size: 12px;
+  font-weight: 750;
+  text-align: left;
+}
+
+.studio-back-link:hover {
+  background: #f2f4f7;
+  color: #243043;
+}
+
+.studio-workspace {
+  min-height: 100vh;
+}
+
+.studio-workspace .workspace-main {
+  padding-top: 24px;
+}
+
+.studio-header {
+  min-height: 86px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.studio-header > div:first-child > span {
+  color: #3459f2;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+.studio-header h1 {
+  margin: 5px 0 4px;
+  color: #243043;
+  font-size: 28px;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.studio-header p {
+  margin: 0;
+  color: #657085;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.studio-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.studio-create-button {
+  min-width: 130px;
+  box-shadow: none;
+}
+
+.studio-sync {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #4f7558;
+  font-size: 11px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.studio-sync i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #68a875;
+}
+
+.studio-sync--loading i {
+  background: #d7a932;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.studio-sync--error {
+  color: #a84d45;
+}
+
+.studio-sync--error i {
+  background: #d45a50;
+}
+
+.studio-project-filter {
+  min-height: 38px;
+  margin: 12px 0;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid rgba(52, 89, 242, 0.16);
+  border-radius: 8px;
+  background: rgba(238, 242, 255, 0.76);
+  color: #40506c;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.studio-project-filter button {
+  border: 0;
+  background: transparent;
+  color: #3459f2;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.studio-secondary-assets {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(36, 48, 67, 0.09);
+}
+
+.studio-secondary-assets > .section-title {
+  margin-bottom: 14px;
+}
+
+@media (max-width: 1180px) {
+  .v7-studio-button {
+    padding-inline: 11px;
+  }
+}
+
+@media (max-width: 920px) {
+  .prompt-studio-site .sidebar {
+    position: relative;
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .prompt-studio-site .brand-block,
+  .prompt-studio-site .sidebar-section--grow,
+  .prompt-studio-site .account-card {
+    display: none;
+  }
+
+  .prompt-studio-site .sidebar-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 3px;
+  }
+
+  .prompt-studio-site .sidebar-nav__item {
+    flex: 0 0 auto;
+  }
+
+  .studio-back-link {
+    width: fit-content;
+  }
+}
+
+@media (max-width: 640px) {
+  .v7-studio-button {
+    min-width: 40px;
+    padding: 0 11px;
+  }
+
+  .v7-studio-button span {
+    display: none;
+  }
+
+  .studio-header,
+  .studio-header__actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .studio-header {
+    gap: 14px;
+  }
+
+  .studio-header__actions {
+    gap: 9px;
+  }
+
+  .studio-create-button {
+    width: 100%;
+  }
+}
+
 /* Modular content publishing system */
 .login-card {
   position: relative;
