@@ -123,13 +123,15 @@ export default function App() {
             AUTH_RESTORE_TIMEOUT_MS,
             "cloud_sync_timeout"
           );
-        } else {
+        } else if (!restoredUser) {
           clearCurrentUser();
           setExistingUser(null);
           setCurrentUser(null);
           setLegacyPrompts([]);
           setProjects([]);
           setSyncState("idle");
+        } else {
+          setSyncState("error");
         }
       })
       .catch(() => {
@@ -196,7 +198,9 @@ export default function App() {
     if (/email not confirmed/i.test(message)) return "请先打开邮箱完成账号验证";
     if (/password/i.test(message) && /6/i.test(message)) return "密码至少需要 6 位";
     if (/already registered/i.test(message)) return "该邮箱已经注册，请直接登录";
-    if (/failed to fetch|network|cloud_unavailable/i.test(message)) return "云端连接失败，请检查网络后重试";
+    if (/failed to fetch|network|cloud_unavailable|abort|timeout|^\{\}$/i.test(message)) {
+      return "账号服务暂时不可用，请恢复 Supabase 项目后重试";
+    }
     return message || "登录失败，请稍后重试";
   }
 
