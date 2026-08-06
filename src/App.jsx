@@ -17,7 +17,6 @@ import {
   loadCurrentUser,
   loadProjects,
   loadPrompts,
-  loadUsers,
   migrateLegacyData,
   saveCurrentUser,
   saveProjects,
@@ -124,15 +123,13 @@ export default function App() {
             AUTH_RESTORE_TIMEOUT_MS,
             "cloud_sync_timeout"
           );
-        } else if (!restoredUser) {
+        } else {
           clearCurrentUser();
           setExistingUser(null);
           setCurrentUser(null);
           setLegacyPrompts([]);
           setProjects([]);
           setSyncState("idle");
-        } else {
-          setSyncState("error");
         }
       })
       .catch(() => {
@@ -199,20 +196,8 @@ export default function App() {
     if (/email not confirmed/i.test(message)) return "请先打开邮箱完成账号验证";
     if (/password/i.test(message) && /6/i.test(message)) return "密码至少需要 6 位";
     if (/already registered/i.test(message)) return "该邮箱已经注册，请直接登录";
-    if (/failed to fetch|network|cloud_unavailable|abort|timeout|^\{\}$/i.test(message)) {
-      return "云端暂时不可用，可使用此设备上保存的账号继续进入";
-    }
+    if (/failed to fetch|network|cloud_unavailable/i.test(message)) return "云端连接失败，请检查网络后重试";
     return message || "登录失败，请稍后重试";
-  }
-
-  function activateLocalUser(user, localPrompts = loadPrompts(), localProjects = loadProjects()) {
-    const savedUser = saveCurrentUser(user);
-    setExistingUser(savedUser);
-    setCurrentUser(savedUser);
-    setLegacyPrompts(localPrompts.filter((prompt) => prompt.userId === savedUser.id));
-    setProjects(localProjects.filter((project) => project.userId === savedUser.id));
-    setSyncState("error");
-    return savedUser;
   }
 
   async function activateCloudUser(user, localPrompts = loadPrompts(), localProjects = loadProjects()) {
@@ -268,22 +253,7 @@ export default function App() {
       navigate(location.pathname.startsWith("/studio") ? "/studio" : "/my-prompts");
       showToast("账号与提示词已同步");
     } catch (error) {
-      const normalizedEmail = String(email || "").trim().toLowerCase();
-      const localUser = loadUsers().find(
-        (user) => String(user.email || "").trim().toLowerCase() === normalizedEmail
-      );
-      const cloudUnavailable = /failed to fetch|network|cloud_unavailable|abort|timeout|^\{\}$/i.test(
-        String(error?.message || "")
-      );
-
-      if (localUser && cloudUnavailable) {
-        activateLocalUser(localUser);
-        setShowLogin(false);
-        navigate(location.pathname.startsWith("/studio") ? "/studio" : "/my-prompts");
-        showToast("云端暂不可用，已使用本机数据进入");
-      } else {
-        setAuthError(authErrorMessage(error));
-      }
+      setAuthError(authErrorMessage(error));
     } finally {
       setAuthLoading(false);
     }
