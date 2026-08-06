@@ -8,7 +8,9 @@ const SUPABASE_PUBLISHABLE_KEY =
 
 let client;
 
-function cloudFetch(input, init) {
+const CLOUD_REQUEST_TIMEOUT_MS = 10000;
+
+function cloudFetch(input, init = {}) {
   if (typeof window === "undefined" || !/^https?:$/.test(window.location.protocol)) {
     return fetch(input, init);
   }
@@ -16,7 +18,19 @@ function cloudFetch(input, init) {
   const target = new URL(typeof input === "string" ? input : input.url);
   const path = `${target.pathname}${target.search}`;
   const proxyUrl = `${window.location.origin}/api/supabase?path=${encodeURIComponent(path)}`;
-  return fetch(proxyUrl, init);
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), CLOUD_REQUEST_TIMEOUT_MS);
+  const sourceSignal = init.signal;
+
+  if (sourceSignal?.aborted) {
+    controller.abort(sourceSignal.reason);
+  } else if (sourceSignal) {
+    sourceSignal.addEventListener("abort", () => controller.abort(sourceSignal.reason), { once: true });
+  }
+
+  return fetch(proxyUrl, { ...init, signal: controller.signal }).finally(() => {
+    window.clearTimeout(timeoutId);
+  });
 }
 
 export function getSupabase() {

@@ -5,6 +5,7 @@ const SUPABASE_PUBLISHABLE_KEY =
   "sb_publishable_Z4b-LXyOAGf5rECj64ILZA_Pu-mTrIk";
 
 const ALLOWED_PATHS = ["/auth/v1/", "/rest/v1/"];
+const UPSTREAM_TIMEOUT_MS = 10000;
 
 function targetUrl(request) {
   const path = String(request.query?.path || "");
@@ -45,6 +46,7 @@ export default async function handler(request, response) {
       headers,
       body: requestBody(request),
       redirect: "manual",
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
 
     const contentType = upstream.headers.get("content-type");

@@ -54,6 +54,16 @@ const LIST_TITLES = {
   "/search": "搜索｜PinPrompt 拼好词",
 };
 
+const AUTH_RESTORE_TIMEOUT_MS = 12000;
+
+function withTimeout(promise, timeoutMs, message) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => window.clearTimeout(timeoutId));
+}
+
 function setListSeo(pathname) {
   const title = LIST_TITLES[pathname];
   if (!title) return;
@@ -98,12 +108,38 @@ export default function App() {
 
     const localPrompts = loadPrompts();
     const localProjects = loadProjects();
-    getCloudUser()
+    if (restoredUser) {
+      setCurrentUser(restoredUser);
+      setLegacyPrompts(localPrompts.filter((prompt) => prompt.userId === restoredUser.id));
+      setProjects(localProjects.filter((project) => project.userId === restoredUser.id));
+      setSyncState("loading");
+    }
+
+    withTimeout(getCloudUser(), AUTH_RESTORE_TIMEOUT_MS, "cloud_restore_timeout")
       .then(async (cloudUser) => {
-        if (cloudUser) await activateCloudUser(cloudUser, localPrompts, localProjects);
-        else clearCurrentUser();
+        if (cloudUser) {
+          await withTimeout(
+            activateCloudUser(cloudUser, localPrompts, localProjects),
+            AUTH_RESTORE_TIMEOUT_MS,
+            "cloud_sync_timeout"
+          );
+        } else {
+          clearCurrentUser();
+          setExistingUser(null);
+          setCurrentUser(null);
+          setLegacyPrompts([]);
+          setProjects([]);
+          setSyncState("idle");
+        }
       })
-      .catch(() => clearCurrentUser())
+      .catch(() => {
+        if (restoredUser) {
+          setCurrentUser(restoredUser);
+          setLegacyPrompts(localPrompts.filter((prompt) => prompt.userId === restoredUser.id));
+          setProjects(localProjects.filter((project) => project.userId === restoredUser.id));
+        }
+        setSyncState("error");
+      })
       .finally(() => setAuthReady(true));
   }, []);
 
