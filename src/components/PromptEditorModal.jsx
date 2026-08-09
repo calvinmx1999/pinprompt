@@ -21,6 +21,26 @@ function emptyVariantRow() {
   return { platform: "", content: "" };
 }
 
+const PLATFORM_META = {
+  "即梦": { mark: "即", tone: "jimeng" },
+  "可灵": { mark: "K", tone: "kling" },
+  Lovart: { mark: "L", tone: "lovart" },
+  Liblib: { mark: "Li", tone: "liblib" },
+  Seedance: { mark: "S", tone: "seedance" },
+  "Nano Banana": { mark: "N", tone: "banana" },
+  "GPT Image": { mark: "◎", tone: "gpt" },
+};
+
+function PlatformMark({ platform }) {
+  const meta = PLATFORM_META[platform] || { mark: platform.slice(0, 1), tone: "default" };
+
+  return (
+    <span aria-hidden="true" className={`platform-picker__logo platform-picker__logo--${meta.tone}`}>
+      {meta.mark}
+    </span>
+  );
+}
+
 export default function PromptEditorModal({ prompt, projects, onClose, onDelete, onSave }) {
   const current = prompt || createEmptyPrompt();
   const [title, setTitle] = useState(current.title || "");
@@ -215,8 +235,16 @@ export default function PromptEditorModal({ prompt, projects, onClose, onDelete,
                 const checked = parseCommaList(platforms).includes(platform);
                 return (
                   <label className={`platform-picker__item${checked ? " is-active" : ""}`} key={platform}>
-                    <input checked={checked} onChange={() => togglePlatform(platform)} type="checkbox" />
-                    <span>{platform}</span>
+                    <span className="platform-picker__identity">
+                      <PlatformMark platform={platform} />
+                      <span className="platform-picker__name">{platform}</span>
+                    </span>
+                    <input
+                      aria-label={`选择 ${platform}`}
+                      checked={checked}
+                      onChange={() => togglePlatform(platform)}
+                      type="checkbox"
+                    />
                   </label>
                 );
               })}

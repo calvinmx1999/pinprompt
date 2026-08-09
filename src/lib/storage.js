@@ -819,11 +819,27 @@ const DEFAULT_FRAGMENTS = [
 
 export function ensureThemeSeed() {
   if (!localStorage.getItem(SETTINGS_KEY)) {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ theme: "light" }));
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ theme: "paper" }));
   }
   if (!localStorage.getItem(LEGACY_THEME_KEY)) {
     localStorage.setItem(LEGACY_THEME_KEY, "light");
   }
+}
+
+export function loadInterfaceTheme() {
+  const settings = safeReadJson(SETTINGS_KEY) || {};
+  const storedTheme = settings.theme || localStorage.getItem(LEGACY_THEME_KEY) || "paper";
+  if (storedTheme === "night" || storedTheme === "dark") return "night";
+  if (storedTheme === "macaron") return "macaron";
+  return "paper";
+}
+
+export function saveInterfaceTheme(theme) {
+  const nextTheme = ["paper", "macaron", "night"].includes(theme) ? theme : "paper";
+  const settings = safeReadJson(SETTINGS_KEY) || {};
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...settings, theme: nextTheme }));
+  localStorage.setItem(LEGACY_THEME_KEY, nextTheme === "night" ? "dark" : "light");
+  return nextTheme;
 }
 
 function safeParse(key, fallback) {
@@ -1355,7 +1371,7 @@ export function createEmptyProject() {
     userId: "",
     name: "",
     desc: "",
-    color: "#3b82f6",
+    color: "#B7E0FF",
     status: "active",
     promptCount: 0,
     workflowCount: 0,

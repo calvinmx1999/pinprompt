@@ -14,6 +14,7 @@ import NotFoundPage from "./components/content/NotFoundPage.jsx";
 import {
   clearCurrentUser,
   ensureThemeSeed,
+  loadInterfaceTheme,
   loadCurrentUser,
   loadProjects,
   loadPrompts,
@@ -30,6 +31,7 @@ import {
   signOutCloud,
   signUpCloud,
   upsertCloudProjects,
+  upsertCloudProject,
   upsertCloudPrompt,
   upsertCloudPrompts,
 } from "./lib/cloud.js";
@@ -100,6 +102,7 @@ export default function App() {
 
   useEffect(() => {
     ensureThemeSeed();
+    document.documentElement.dataset.pinpromptTheme = loadInterfaceTheme();
     const migrationState = migrateLegacyData();
     const restoredUser = loadCurrentUser() || migrationState.currentUser || null;
     setExistingUser(restoredUser);
@@ -326,6 +329,49 @@ export default function App() {
     savePrompts([...otherUsersPrompts, ...nextPrompts]);
   }
 
+  function saveOwnedProjects(nextProjects) {
+    const otherUsersProjects = loadProjects().filter(
+      (entry) => entry.userId && entry.userId !== currentUser?.id
+    );
+    saveProjects([...otherUsersProjects, ...nextProjects]);
+  }
+
+  async function persistCloudProject(project) {
+    if (!currentUser) return;
+    setSyncState("loading");
+    try {
+      await upsertCloudProject(currentUser.id, project);
+      setSyncState("ok");
+    } catch (error) {
+      setSyncState("error");
+      showToast(authErrorMessage(error));
+    }
+  }
+
+  function handleCreateProject(project) {
+    if (!currentUser) {
+      setShowLogin(true);
+      return null;
+    }
+
+    const now = new Date().toISOString();
+    const nextProject = {
+      ...project,
+      userId: currentUser.id,
+      createdAt: project.createdAt || now,
+      updatedAt: now,
+    };
+    const nextProjects = projects.some((entry) => entry.id === nextProject.id)
+      ? projects.map((entry) => (entry.id === nextProject.id ? nextProject : entry))
+      : [nextProject, ...projects];
+
+    setProjects(nextProjects);
+    saveOwnedProjects(nextProjects);
+    persistCloudProject(nextProject);
+    showToast("项目已创建");
+    return nextProject;
+  }
+
   function handleCopyLegacyPrompt(prompt, content = prompt?.content, successMessage = "已复制收藏提示词") {
     if (!prompt || !content) return;
     copyText(content, successMessage);
@@ -510,6 +556,7 @@ export default function App() {
                   currentUser={currentUser}
                   onBack={() => navigate("/")}
                   onCopyPrompt={handleCopyLegacyPrompt}
+                  onCreateProject={handleCreateProject}
                   onCopyText={copyText}
                   onEditPrompt={(prompt) => {
                     setEditingPrompt(prompt);

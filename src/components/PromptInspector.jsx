@@ -21,6 +21,7 @@ function replaceVariables(content, variables, values) {
 
 export default function PromptInspector({
   prompt,
+  headingId,
   activePlatform,
   onPlatformChange,
   variableFields,
@@ -50,6 +51,8 @@ export default function PromptInspector({
         );
   const openPlatformUrl = platformLink(activePlatform);
   const availablePlatforms = PLATFORM_OPTIONS;
+  const tags = [...new Set([...(prompt.taskTags || []), ...(prompt.effectTags || []), ...(prompt.tags || [])])]
+    .filter(Boolean);
 
   return (
     <aside className="inspector">
@@ -57,14 +60,14 @@ export default function PromptInspector({
         <div className="inspector__header">
           <div>
             <div className="inspector__meta-row">
-              <span className="meta-chip meta-chip--blue">{TYPE_LABEL[prompt.type]}</span>
+              <span className="meta-chip meta-chip--blue">{TYPE_LABEL[prompt.type] || "文本"}</span>
               {(prompt.platforms?.length ? prompt.platforms : ["通用版"]).slice(0, 4).map((platform) => (
                 <span className="meta-chip meta-chip--platform" key={platform}>
                   {platform}
                 </span>
               ))}
             </div>
-            <h2>{prompt.title}</h2>
+            <h2 id={headingId}>{prompt.title}</h2>
           </div>
           <button
             className={`icon-toggle icon-toggle--solid${prompt.favorite ? " is-active" : ""}`}
@@ -106,10 +109,19 @@ export default function PromptInspector({
         <pre className="prompt-content">{displayContent}</pre>
       </div>
 
-      <div className="inspector__section">
-        <div className="section-title">变量填写</div>
-        <div className="inspector__helper">填写后会自动替换提示词中的变量</div>
-        {variableFields?.length ? (
+      {tags.length ? (
+        <div className="inspector__section inspector__section--tags">
+          <div className="section-title">关键词</div>
+          <div className="prompt-card__tags">
+            {tags.map((tag) => <span className="tag-chip" key={tag}>{tag}</span>)}
+          </div>
+        </div>
+      ) : null}
+
+      {variableFields?.length ? (
+        <div className="inspector__section">
+          <div className="section-title">变量填写</div>
+          <div className="inspector__helper">填写后会自动替换提示词中的变量</div>
           <div className="variable-form">
             {variableFields.map((variable) => (
               <label className="variable-field" key={variable.key}>
@@ -122,18 +134,16 @@ export default function PromptInspector({
               </label>
             ))}
           </div>
-        ) : (
-          <div className="inspector__placeholder">这条提示词暂时没有变量，直接复制即可。</div>
-        )}
-      </div>
+        </div>
+      ) : null}
 
       <div className="inspector__section inspector__section--actions">
         <div className="action-row">
           <button className="primary-button" onClick={() => onCopy(prompt.id)} type="button">
             复制提示词
           </button>
-          <button className="secondary-button" disabled={!variableFields?.length} type="button">
-            填入变量
+          <button className="secondary-button" onClick={() => onUse(prompt.id)} type="button">
+            使用提示词
           </button>
         </div>
         <div className="action-row">
@@ -145,9 +155,6 @@ export default function PromptInspector({
           </button>
         </div>
         <div className="action-row action-row--minor">
-          <button className="text-button" onClick={() => onUse(prompt.id)} type="button">
-            最近使用
-          </button>
           <button className="text-button" onClick={() => onEdit(prompt)} type="button">
             编辑
           </button>

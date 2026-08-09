@@ -1,13 +1,19 @@
 import { useState } from "react";
 import { createEmptyProject } from "../lib/storage.js";
 
-const COLOR_OPTIONS = ["#ef4444", "#f59e0b", "#22c55e", "#3b82f6", "#8b5cf6", "#ec4899"];
+const COLOR_OPTIONS = [
+  { value: "#B7E0FF", label: "天空蓝" },
+  { value: "#CFEADC", label: "薄荷绿" },
+  { value: "#FBEDCA", label: "奶油黄" },
+  { value: "#FFDCA4", label: "杏桃橙" },
+  { value: "#FFDEE1", label: "樱花粉" },
+];
 
 export default function ProjectEditorModal({ project, onClose, onDelete, onSave }) {
   const current = project || createEmptyProject();
   const [name, setName] = useState(current.name || "");
   const [desc, setDesc] = useState(current.desc || "");
-  const [color, setColor] = useState(current.color || COLOR_OPTIONS[0]);
+  const [color, setColor] = useState(current.color || COLOR_OPTIONS[0].value);
   const [errors, setErrors] = useState({});
 
   function handleSubmit(event) {
@@ -70,15 +76,21 @@ export default function ProjectEditorModal({ project, onClose, onDelete, onSave 
                 <p>颜色会用于左侧项目列表和项目卡片识别。</p>
               </div>
             </div>
-            <div className="color-picker">
+            <div className="project-color-options">
               {COLOR_OPTIONS.map((option) => (
                 <button
-                  className={`color-swatch${color === option ? " is-active" : ""}`}
-                  key={option}
-                  onClick={() => setColor(option)}
-                  style={{ background: option }}
+                  aria-label={`选择${option.label}`}
+                  aria-pressed={color === option.value}
+                  className={`project-color-option${color === option.value ? " is-active" : ""}`}
+                  key={option.value}
+                  onClick={() => setColor(option.value)}
+                  style={{ "--project-color": option.value }}
                   type="button"
-                />
+                >
+                  <span aria-hidden="true" className="project-color-option__folder" />
+                  <span>{option.label}</span>
+                  <b aria-hidden="true">✓</b>
+                </button>
               ))}
             </div>
           </section>
