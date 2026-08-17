@@ -476,10 +476,11 @@ export default function App() {
   }
 
   const isStudio = location.pathname.startsWith("/studio");
+  const isExactHome = location.pathname === "/";
 
   return (
     <div className={isStudio ? "studio-route" : "v7-site"}>
-      {!isStudio ? (
+      {!isStudio && !isExactHome ? (
         <V7Header
           currentUser={currentUser}
           onLoginRequest={() => setShowLogin(true)}
@@ -488,7 +489,7 @@ export default function App() {
         />
       ) : null}
 
-      <main className={isStudio ? "studio-route__main" : "v7-main"}>
+      <main className={isStudio ? "studio-route__main" : isExactHome ? "exact-home-main" : "v7-main"}>
         <Routes>
           <Route
             path="/"
