@@ -882,7 +882,8 @@ function normalizeType(type, category) {
   if (["image", "img"].includes(raw)) return "image";
   if (["video", "vid"].includes(raw)) return "video";
   if (["text", "txt"].includes(raw)) return "text";
-  if (["voice", "music", "workflow"].includes(raw)) return "workflow";
+  if (raw === "music") return "music";
+  if (["voice", "workflow"].includes(raw)) return "workflow";
   return "text";
 }
 
@@ -1073,6 +1074,8 @@ function normalizePrompt(prompt, index, userId = "") {
     id: prompt?.id || `prompt_${index + 1}`,
     title: prompt?.title || "未命名提示词",
     content: prompt?.content || "",
+    tips: prompt?.tips || "",
+    model: prompt?.model || "",
     type,
     platforms: platforms.length ? platforms : ["通用版"],
     taskTags: Array.isArray(prompt?.taskTags) ? prompt.taskTags : Array.isArray(prompt?.tags) ? prompt.tags.slice(0, 2) : [],

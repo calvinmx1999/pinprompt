@@ -183,3 +183,9 @@ export async function deleteCloudPrompt(userId, promptId) {
     .eq("user_id", userId);
   if (error) throw error;
 }
+
+export async function deleteCloudProject(userId, projectId) {
+  const { error } = await getSupabase().from("projects").delete()
+    .eq("id", projectId).eq("user_id", userId);
+  if (error) throw error;
+}

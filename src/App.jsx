@@ -4,7 +4,7 @@ import LoginPage from "./components/LoginPage.jsx";
 import PromptEditorModal from "./components/PromptEditorModal.jsx";
 import Toast from "./components/Toast.jsx";
 import V7Header from "./components/V7Header.jsx";
-import PromptStudioPage from "./components/PromptStudioPage.jsx";
+import OctoberStudioPage from "./components/OctoberStudioPage.jsx";
 import V7UserPromptLibrary from "./components/V7UserPromptLibrary.jsx";
 import ContentDetailPage from "./components/content/ContentDetailPage.jsx";
 import ContentHomePage from "./components/content/ContentHomePage.jsx";
@@ -25,6 +25,7 @@ import {
 } from "./lib/storage.js";
 import {
   deleteCloudPrompt,
+  deleteCloudProject,
   fetchCloudLibrary,
   getCloudUser,
   signInCloud,
@@ -372,6 +373,54 @@ export default function App() {
     return nextProject;
   }
 
+  function handleSaveStudioLibrary(data) {
+    if (!currentUser) return;
+    const now = Date.now();
+    const nextProjects = data.projects.map((p) => {
+      const previous = projects.find((entry) => entry.id === p.id);
+      if (previous && previous.name === p.name && previous.color === p.dot) return previous;
+      return { ...previous, id: p.id, name: p.name, color: p.dot,
+        userId: currentUser.id, createdAt: previous?.createdAt || now, updatedAt: now };
+    });
+    const nextPrompts = data.prompts.map((p) => {
+      const previous = legacyPrompts.find((entry) => entry.id === p.id);
+      const projectIds = data.projects.filter((project) => project.items.includes(p.id)).map((project) => project.id);
+      const tags = [...new Set([...(previous?.taskTags || []), ...(previous?.effectTags || []), ...(previous?.tags || [])])];
+      if (previous && previous.title === p.title && previous.content === p.body &&
+          (previous.type === p.cat || (previous.type === 'workflow' && p.cat === 'text')) &&
+          (previous.model || (previous.platforms || []).join(' / ')) === p.model &&
+          (previous.tips || '') === p.tips && !!previous.favorite === !!p.fav &&
+          JSON.stringify(tags) === JSON.stringify(p.tags) &&
+          JSON.stringify(previous.projectIds || []) === JSON.stringify(projectIds)) return previous;
+      return { ...previous, id: p.id, title: p.title, content: p.body, type: p.cat,
+        model: p.model, tips: p.tips, tags: p.tags,
+        taskTags: JSON.stringify(tags) === JSON.stringify(p.tags) ? (previous?.taskTags || []) : p.tags,
+        effectTags: JSON.stringify(tags) === JSON.stringify(p.tags) ? (previous?.effectTags || []) : [],
+        platforms: previous?.platforms || [p.model || '通用版'], favorite: !!p.fav,
+        projectIds, userId: currentUser.id, usedCount: previous?.usedCount || 0,
+        createdAt: previous?.createdAt || now, updatedAt: now };
+    });
+    const changedPrompts = nextPrompts.filter(p => !legacyPrompts.includes(p));
+    const changedProjects = nextProjects.filter(p => !projects.includes(p));
+    const removedPrompts = legacyPrompts.filter(p => !nextPrompts.some(n => n.id === p.id));
+    const removedProjects = projects.filter(p => !nextProjects.some(n => n.id === p.id));
+    if (!changedPrompts.length && !changedProjects.length && !removedPrompts.length && !removedProjects.length) return;
+    setLegacyPrompts(nextPrompts);
+    setProjects(nextProjects);
+    saveOwnedPrompts(nextPrompts);
+    saveOwnedProjects(nextProjects);
+    setSyncState('loading');
+    Promise.all([
+      upsertCloudPrompts(currentUser.id, changedPrompts),
+      upsertCloudProjects(currentUser.id, changedProjects),
+      ...removedPrompts.map(p => deleteCloudPrompt(currentUser.id, p.id)),
+      ...removedProjects.map(p => deleteCloudProject(currentUser.id, p.id)),
+    ]).then(() => setSyncState('ok')).catch(error => {
+      setSyncState('error');
+      showToast(authErrorMessage(error));
+    });
+  }
+
   function handleCopyLegacyPrompt(prompt, content = prompt?.content, successMessage = "已复制收藏提示词") {
     if (!prompt || !content) return;
     copyText(content, successMessage);
@@ -553,8 +602,9 @@ export default function App() {
             path="/studio"
             element={
               currentUser ? (
-                <PromptStudioPage
+                <OctoberStudioPage
                   currentUser={currentUser}
+                  onSaveLibrary={handleSaveStudioLibrary}
                   onBack={() => navigate("/")}
                   onCopyPrompt={handleCopyLegacyPrompt}
                   onCreateProject={handleCreateProject}

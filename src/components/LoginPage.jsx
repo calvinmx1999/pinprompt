@@ -20,7 +20,7 @@ export default function LoginPage({ authError, authLoading, existingUser, onClos
             <span>Pin</span>
             <span>Prompt</span>
           </div>
-          <div className="brand-copy__sub">AIGC 实战学习站</div>
+          <div className="brand-copy__sub">提示词灵感收藏</div>
         </div>
       </div>
 

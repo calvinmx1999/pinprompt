@@ -16,7 +16,7 @@ export default function ContentHomePage({ onLoginRequest }) {
       const label = link.textContent.replace(/\s+/g, " ").trim();
       let destination = null;
 
-      if (label.includes("提示词工作台") || label === "私人词库") {
+      if (href === "/studio" || label.includes("登录")) {
         clickEvent.preventDefault();
         onLoginRequest();
         return;
@@ -38,8 +38,8 @@ export default function ContentHomePage({ onLoginRequest }) {
     <iframe
       className="exact-kimi-home"
       onLoad={connectReferenceLinks}
-      src="/kimi-home/index.html"
-      title="PinPrompt · 人人都能参与的 AIGC 学习平台"
+      src="/october/index.html"
+      title="拼好词 PinPrompt · 个人提示词灵感收藏"
     />
   );
 }

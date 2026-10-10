@@ -6942,6 +6942,14 @@ select:focus-visible {
   background: #f5f0e4;
 }
 
+.october-studio-frame {
+  display: block;
+  width: 100%;
+  height: 100svh;
+  border: 0;
+  background: #f5f0e7;
+}
+
 /* Archive visual system for landing-page secondary routes */
 .v7-site {
   --archive-paper: #f5f1e6;

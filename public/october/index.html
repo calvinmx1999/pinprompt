@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>拼好词 PinPrompt · 个人提示词灵感收藏</title>
+<meta name="description" content="拼好词是给 AI 创作者的提示词收藏夹：看到好用的就存下来，按图片、视频、文本、音乐归档，用的时候填空、一键复制。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<style>
+:root{
+  --bg:#F5F0E7; --band:#EFE7D8; --paper:#FBF9F3; --ink:#4A3B2E; --muted:#6F604F; --body:#5E4E3E;
+  --accent:#B5523A; --danger:#A0462F; --yellow:#F7E48A; --line:#E1D8C8; --kraft:#E6D3AE;
+  --shadow:rgba(74,59,46,.22);
+  --img:#F9D8E2; --img-dot:#D4537E; --vid:#D9EEE2; --vid-dot:#2E8B5E;
+  --txt:#DCE6F5; --txt-dot:#3D6FB6; --mus:#E9DFF5; --mus-dot:#8058B8;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --pad:clamp(20px,4vw,48px);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden;padding-bottom:env(safe-area-inset-bottom,0px)}
+a{color:var(--ink);text-decoration:none}
+a:hover{color:var(--accent)}
+button,input{font-family:inherit;color:inherit}
+:focus-visible{outline:3px solid #E2B93B;outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.mono{font-family:var(--mono)}
+.wrap{max-width:1240px;margin:0 auto;padding-left:var(--pad);padding-right:var(--pad)}
+.band{background:var(--band);border-top:1.5px solid var(--line);border-bottom:1.5px solid var(--line)}
+.h2{margin:0;font-size:clamp(32px,4vw,46px);font-weight:900;line-height:1.2}
+.lead{margin:0;font-size:17px;line-height:1.85;color:var(--muted)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:1.5px solid var(--ink);border-radius:999px;background:#FBF8F2;color:var(--ink);cursor:pointer;transition:transform .12s ease}
+.btn:hover{transform:translate(-1px,-1px);color:var(--ink)}
+.btn:active{transform:translate(1px,1px)}
+.btn.primary{background:var(--yellow);font-weight:700;box-shadow:4px 4px 0 var(--shadow)}
+.btn.sm{min-height:48px;padding:0 22px;font-size:16px}
+.btn.lg{min-height:60px;padding:0 32px;font-size:18px}
+.btn.lg.primary{font-size:19px}
+
+.badge{display:inline-flex;align-items:center;justify-content:center;border:1.5px solid var(--ink);background:var(--yellow);font-weight:900;transform:rotate(-4deg);color:var(--ink)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.dot.all{background:conic-gradient(var(--img-dot) 0 25%,var(--vid-dot) 0 50%,var(--txt-dot) 0 75%,var(--mus-dot) 0)}
+
+/* 导航 */
+.nav{padding-top:calc(28px + env(safe-area-inset-top,0px));padding-bottom:28px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:18px}
+.logo{display:inline-flex;align-items:center;gap:14px}
+.brand-stack{position:relative;width:var(--brand-size,52px);height:var(--brand-size,52px);flex-shrink:0}
+.brand-card{position:absolute;inset:0;border-radius:var(--brand-radius,12px);border:2px solid #fff;box-shadow:0 12px 24px rgba(31,41,55,.14)}
+.brand-card--back-pink{background:#f8bbd9;transform:rotate(4deg) translate(5px,3px)}
+.brand-card--back-yellow{background:#fff59d;transform:rotate(-4deg) translate(2px,7px)}
+.brand-card--front{background:#c8e6c9;transform:rotate(-7deg);display:grid;place-items:center;font-size:var(--brand-glyph,30px);font-weight:900;color:#243043}
+.brand-copy__title{display:flex;gap:1px;font-size:22px;font-weight:800;color:#243043}
+.brand-copy__title span:last-child{color:#ee2e72}
+.brand-copy__sub{display:block;margin-top:4px;font-size:13px;color:#99a2b1}
+.nav nav{display:flex;flex-wrap:wrap;gap:6px 26px;font-size:16px}
+.nav nav a{min-height:44px;display:inline-flex;align-items:center}
+.nav .acts{display:flex;gap:12px}
+
+/* 首屏 */
+.hero{padding-top:48px;padding-bottom:96px;display:flex;flex-wrap:wrap;align-items:center;gap:56px}
+.hero-copy{flex:1 1 420px;min-width:0;display:flex;flex-direction:column;gap:26px}
+.chip-label{align-self:flex-start;display:inline-flex;align-items:center;gap:10px;min-height:40px;padding:0 18px;border:1.5px solid #B9AE9E;border-radius:999px;font-size:14px;font-weight:700;color:var(--body);background:var(--paper)}
+.hero h1{margin:0;font-size:clamp(44px,6vw,76px);line-height:1.12;font-weight:900;letter-spacing:.01em}
+.hero p{margin:0;font-size:19px;line-height:1.85;color:var(--muted);max-width:30em}
+.cta-row{display:flex;flex-wrap:wrap;gap:14px;padding-top:6px}
+
+.hero-art{flex:1 1 520px;min-width:0;position:relative;padding:40px 28px 56px 20px}
+.loose{position:absolute;border:1.5px solid var(--ink);border-radius:16px;box-shadow:4px 4px 0 rgba(74,59,46,.18);padding:18px 20px}
+.loose .no{font-family:var(--mono);font-size:12px;font-weight:800;color:#7A6A58}
+.loose .t{font-size:17px;font-weight:700;margin-top:8px}
+.loose.a{top:6px;left:2%;width:56%;height:200px;transform:rotate(-7deg);background:var(--img)}
+.loose.b{top:0;right:0;width:50%;height:210px;transform:rotate(6deg);background:var(--txt);text-align:right}
+.loose.c{bottom:8px;left:8%;right:14%;height:120px;transform:rotate(-2.5deg);background:var(--vid);padding:0}
+
+.paper{position:relative;background:var(--paper);border:1.5px solid var(--ink);border-radius:22px;box-shadow:0 14px 34px rgba(74,59,46,.2)}
+.clip{position:absolute;top:-34px;width:30px;height:66px;pointer-events:none}
+.tape{position:absolute;top:-16px;height:36px;background:rgba(160,192,232,.72);transform:rotate(-2deg);pointer-events:none}
+.demo{z-index:2;padding:34px 34px 30px;transform:rotate(-1deg);display:flex;flex-direction:column;gap:16px}
+.demo .clip{left:90px}
+.demo .tape{right:70px;width:150px}
+.sticky{position:absolute;top:-26px;right:-18px;transform:rotate(8deg);padding:10px 16px;background:var(--yellow);border:1.5px solid var(--ink);font-size:15px;font-weight:700;box-shadow:3px 3px 0 rgba(74,59,46,.2)}
+.demo-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.a-pill{display:inline-flex;align-items:center;gap:8px;min-height:34px;padding:0 14px;border:1.5px solid #B9AE9E;border-radius:999px;font-size:13px;font-weight:700;color:var(--body)}
+.a-pill .dot{width:8px;height:8px}
+.a-no{font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:.08em;color:#8E847A}
+.demo h2{margin:0;font-size:26px;font-weight:900;line-height:1.3}
+.ruled{border:1.5px dashed #B9AE9E;border-radius:14px;padding:0 20px;font-size:16px;line-height:44px;min-height:176px;background-color:#FDFCF8;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 43px,#E6DFD2 43px,#E6DFD2 44px)}
+.blank{font:inherit;font-weight:700;color:var(--ink);height:32px;line-height:32px;padding:0 6px;margin:0 2px;border:none;border-bottom:2px solid var(--accent);border-radius:6px 6px 0 0;background:rgba(247,228,138,.38);vertical-align:baseline;max-width:100%}
+.blank::placeholder{color:var(--danger);opacity:.75;font-weight:500}
+.blank.filled{background:var(--yellow);border-bottom-color:var(--ink)}
+.blank:focus{outline:none;box-shadow:0 0 0 3px #E2B93B}
+.demo-foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
+.demo-foot .mono{font-size:13px;color:var(--muted)}
+.copy{min-height:50px;padding:0 26px;font-size:17px;font-weight:500;background:var(--yellow);box-shadow:3px 3px 0 var(--shadow)}
+.copy.done{background:var(--vid)}
+
+/* 档案卡 */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:30px}
+.card{position:relative;padding-top:26px}
+.ear{position:absolute;top:0;left:22px;height:28px;padding:0 16px;display:flex;align-items:center;background:var(--c);border:1.5px solid var(--ink);border-bottom:none;border-radius:10px 10px 0 0;font-family:var(--mono);font-size:13px;font-weight:800;color:#7A6A58}
+.sheet{background:var(--c);border:1.5px solid var(--ink);border-radius:18px;box-shadow:4px 4px 0 var(--shadow);padding:28px 26px;min-height:230px;display:flex;flex-direction:column;gap:14px}
+.sheet h3{margin:0;font-size:24px;font-weight:900}
+.sheet p{margin:0;font-size:16px;line-height:1.85;color:var(--body)}
+.var{display:inline-block;font-size:12px;padding:2px 9px;border:1px dashed #7A6A58;border-radius:999px;background:rgba(255,255,255,.55);line-height:1.6}
+.sheet p .var{font-size:15px;font-weight:700}
+
+.sec{padding-top:100px;padding-bottom:100px;display:flex;flex-direction:column;gap:40px}
+.sec-head{display:flex;flex-direction:column;gap:14px;max-width:640px}
+.types-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:24px}
+.tabs{display:flex;flex-wrap:wrap;gap:12px}
+.tab{min-height:50px;padding:0 22px;font-size:17px;box-shadow:3px 3px 0 rgba(74,59,46,.1)}
+.tab[aria-pressed="true"]{background:var(--c);font-weight:700;box-shadow:4px 4px 0 var(--shadow)}
+.sample .ear{height:26px;left:20px;padding:0 14px}
+.sample .sheet{padding:22px 20px 18px;min-height:250px;gap:12px;border-radius:16px}
+.sample h3{font-size:20px;font-weight:700;line-height:1.45}
+.sample p{font-size:14px;line-height:1.8}
+.sample .vars{display:flex;flex-wrap:wrap;gap:6px}
+.sample .meta{margin-top:auto;padding-top:12px;border-top:1.5px dashed rgba(74,59,46,.3);font-size:13px;color:var(--body)}
+
+/* 项目 */
+.proj{padding-top:104px;padding-bottom:104px;display:flex;flex-wrap:wrap;align-items:center;gap:56px}
+.proj-copy{flex:1 1 380px;min-width:0;display:flex;flex-direction:column;gap:18px}
+.proj-copy .lead{max-width:28em}
+.folder-wrap{flex:1 1 480px;min-width:0;position:relative;padding-top:34px}
+.folder-tab{position:absolute;top:0;left:28px;height:36px;padding:0 20px;display:flex;align-items:center;gap:10px;background:var(--kraft);border:1.5px solid var(--ink);border-bottom:none;border-radius:12px 12px 0 0;font-size:15px;font-weight:700}
+.folder{background:var(--kraft);border:1.5px solid var(--ink);border-radius:20px;box-shadow:5px 5px 0 var(--shadow);padding:14px}
+.folder ol{list-style:none;margin:0;padding:10px 6px;background:var(--paper);border:1.5px solid var(--ink);border-radius:12px}
+.folder li{display:flex;align-items:center;gap:14px;min-height:64px;padding:0 18px;border-bottom:1px dashed #D6CAB6}
+.folder li:last-child{border-bottom:none}
+.folder .n{font-family:var(--mono);font-size:13px;color:#8E847A;width:32px}
+.folder .name{flex:1;font-size:16px;font-weight:500}
+.folder .k{font-size:13px;color:var(--muted)}
+
+/* 结尾 */
+.end{padding-top:120px;padding-bottom:110px}
+.end-stack{position:relative;max-width:860px;margin:0 auto}
+.end-back{position:absolute;inset:18px -14px -22px 24px;transform:rotate(2deg);background:var(--paper);border:1.5px solid var(--ink);border-radius:24px}
+.end-card{padding:64px clamp(24px,6vw,72px);transform:rotate(-.8deg);text-align:center;display:flex;flex-direction:column;align-items:center;gap:22px;border-radius:24px;box-shadow:0 14px 34px rgba(74,59,46,.16)}
+.end-card .clip{left:18%}
+.end-card .tape{right:16%;width:160px}
+.end-card h2{margin:0;font-size:clamp(30px,4.4vw,48px);font-weight:900;line-height:1.25}
+.stamp{font-size:13px;letter-spacing:.32em;color:#8E847A;font-weight:500;padding-top:18px}
+
+footer{border-top:1.5px solid var(--line)}
+.foot{padding-top:36px;padding-bottom:48px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:18px;font-size:14px;color:var(--muted)}
+.foot .badge{width:36px;height:36px;border-radius:10px;font-size:18px}
+.foot .brand{display:flex;align-items:center;gap:12px}
+.foot .brand-stack{--brand-size:36px;--brand-radius:10px;--brand-glyph:22px}
+.foot nav{display:flex;flex-wrap:wrap;gap:6px 24px}
+.foot nav a{min-height:44px;display:inline-flex;align-items:center;color:var(--muted)}
+
+.toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;z-index:50;padding:12px 20px;border-radius:999px;background:var(--ink);color:var(--bg);font-size:15px;transition:opacity .2s,transform .2s;white-space:nowrap}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:720px){
+  .nav nav{order:3;width:100%;gap:4px 20px}
+  .hero{padding-top:20px;gap:40px}
+  .hero-art{padding:36px 8px 48px 0}
+  .demo{padding:28px 20px 22px}
+  .sticky{right:-4px}
+  .ruled{padding:0 12px;font-size:15px}
+  .loose .t{font-size:15px}
+  .end-back{inset:18px 8px -22px 16px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;scroll-behavior:auto !important}}
+</style>
+</head>
+<body>
+
+<header class="wrap nav">
+  <a href="#top" class="logo" aria-label="拼好词 PinPrompt 首页">
+    <span class="brand-stack" aria-hidden="true">
+      <span class="brand-card brand-card--back-pink"></span>
+      <span class="brand-card brand-card--back-yellow"></span>
+      <span class="brand-card brand-card--front">拼</span>
+    </span>
+    <span class="brand-copy"><span class="brand-copy__title"><span>Pin</span><span>Prompt</span></span><span class="brand-copy__sub">提示词灵感收藏</span></span>
+  </a>
+  <nav aria-label="主导航">
+    <a href="#how">怎么用</a>
+    <a href="#types">四种档案</a>
+    <a href="#projects">项目</a>
+    <a href="#">学习站</a>
+  </nav>
+  <div class="acts">
+    <a href="/studio" target="_top" class="btn sm">登录</a>
+    <a href="/studio" target="_top" class="btn sm primary" style="box-shadow:3px 3px 0 var(--shadow)">开始收集</a>
+  </div>
+</header>
+
+<main>
+<section id="top" class="wrap hero">
+  <div class="hero-copy">
+    <span class="chip-label"><span class="dot all" aria-hidden="true"></span>个人提示词灵感收藏</span>
+    <h1>好提示词，<br>随手拼进<br>自己的档案。</h1>
+    <p>拼好词是给 AI 创作者的提示词收藏夹。看到好用的就存下来，按图片、视频、文本、音乐归档；要用的时候填几个空，一键复制。</p>
+    <div class="cta-row">
+      <a href="/studio" target="_top" class="btn lg primary"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M8 2v12M2 8h12"/></svg>开始收集</a>
+      <a href="#how" class="btn lg">看看怎么用</a>
+    </div>
+  </div>
+
+  <div class="hero-art">
+    <div class="loose a" aria-hidden="true"><div class="no">001</div><div class="t">基础人物去油提示词</div></div>
+    <div class="loose b" aria-hidden="true"><div class="no">014</div><div class="t">小红书标题改写</div></div>
+    <div class="loose c" aria-hidden="true"></div>
+
+    <div class="paper demo" role="group" aria-labelledby="demo-title">
+      <svg class="clip" viewBox="0 0 30 66" fill="none" stroke="#8E847A" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M14 2c-6 8 10 12 4 22-4 7-12 6-8 16 3 7 10 6 8 14-1 4-5 6-9 10"/></svg>
+      <span class="tape" aria-hidden="true"></span>
+      <span class="sticky" aria-hidden="true">试试填空</span>
+      <div class="demo-top">
+        <span class="a-pill"><span class="dot" style="background:var(--vid-dot)" aria-hidden="true"></span>视频 · 通用版</span>
+        <span class="a-no">NO.010</span>
+      </div>
+      <h2 id="demo-title">Seedance 高级丝绸广告大片</h2>
+      <div class="ruled"><label for="b-color" class="sr">颜色</label><input id="b-color" class="blank" data-var="颜色" placeholder="颜色" autocomplete="off">丝绸在空中缓慢翻卷，柔光掠过布料褶皱，微距镜头跟随流动，背景纯净，质感奢华，适合<label for="b-brand" class="sr">品牌类型</label><input id="b-brand" class="blank" data-var="品牌类型" placeholder="品牌类型" autocomplete="off">广告开场。</div>
+      <div class="demo-foot">
+        <span class="mono" id="progress" aria-live="polite">已填 0 / 2</span>
+        <button type="button" class="btn copy" id="copy">复制提示词</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how" class="band" aria-labelledby="how-h">
+  <div class="wrap sec">
+    <div class="sec-head">
+      <h2 class="h2" id="how-h">三步，把灵感变成自己的好词</h2>
+      <p class="lead">不用记在备忘录里翻半天，也不用每次重写一遍。</p>
+    </div>
+    <div class="cards">
+      <article class="card" style="--c:var(--img)"><div class="ear">01</div><div class="sheet"><h3>看到就存</h3><p>在哪看到好提示词，就粘贴进来，起个名字、选个类型，存成一张档案卡。</p></div></article>
+      <article class="card" style="--c:var(--vid)"><div class="ear">02</div><div class="sheet"><h3>挖好空</h3><p>把每次要换的部分写成 <span class="var">{产品}</span>、<span class="var">{运镜}</span>，一条提示词就能反复用。</p></div></article>
+      <article class="card" style="--c:var(--yellow)"><div class="ear">03</div><div class="sheet"><h3>填空、复制</h3><p>双击打开档案，在信纸上把空填好，看一眼预览，一键复制到你用的模型里。</p></div></article>
+    </div>
+  </div>
+</section>
+
+<section id="types" class="wrap sec" aria-labelledby="types-h">
+  <div class="types-head">
+    <div class="sec-head">
+      <h2 class="h2" id="types-h">四种档案，各有各的颜色</h2>
+      <p class="lead">出图的、出片的、写字的、配乐的，一眼就能分清。</p>
+    </div>
+    <div class="tabs" role="group" aria-label="档案类型" id="tabs"></div>
+  </div>
+  <div class="cards" id="samples" aria-live="polite"></div>
+</section>
+
+<section id="projects" class="band" aria-labelledby="proj-h">
+  <div class="wrap proj">
+    <div class="proj-copy">
+      <h2 class="h2" id="proj-h">一支片子，<br>一个项目。</h2>
+      <p class="lead">同一个作品要用的分镜图、运镜、旁白文案和配乐提示词，放进一个项目里。开工的时候整包打开，不用满库翻找。</p>
+      <a href="/studio" target="_top" class="btn" style="align-self:flex-start;min-height:52px;padding:0 26px;font-size:17px;margin-top:8px">新建一个项目</a>
+    </div>
+    <div class="folder-wrap" aria-label="项目示例">
+      <div class="folder-tab"><span class="dot" style="background:#E8508A" aria-hidden="true"></span>[示例项目：新品广告片]</div>
+      <div class="folder">
+        <ol>
+          <li><span class="n">01</span><span class="dot" style="background:var(--img-dot)" aria-hidden="true"></span><span class="name">产品关键帧</span><span class="k">图片</span></li>
+          <li><span class="n">02</span><span class="dot" style="background:var(--vid-dot)" aria-hidden="true"></span><span class="name">丝绸开场运镜</span><span class="k">视频</span></li>
+          <li><span class="n">03</span><span class="dot" style="background:var(--txt-dot)" aria-hidden="true"></span><span class="name">旁白文案</span><span class="k">文本</span></li>
+          <li><span class="n">04</span><span class="dot" style="background:var(--mus-dot)" aria-hidden="true"></span><span class="name">片尾配乐</span><span class="k">音乐</span></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap end" aria-labelledby="end-h">
+  <div class="end-stack">
+    <div class="end-back" aria-hidden="true"></div>
+    <div class="paper end-card">
+      <svg class="clip" viewBox="0 0 30 66" fill="none" stroke="#8E847A" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M14 2c-6 8 10 12 4 22-4 7-12 6-8 16 3 7 10 6 8 14-1 4-5 6-9 10"/></svg>
+      <span class="tape" aria-hidden="true"></span>
+      <h2 id="end-h">你的下一个好词，<br>从第一条收藏开始。</h2>
+      <p class="lead">图片、视频、文本、音乐，都能放进同一个档案柜。</p>
+      <div class="cta-row" style="justify-content:center">
+        <a href="/studio" target="_top" class="btn lg primary">开始收集</a>
+        <a href="/studio" target="_top" class="btn lg">已有账号，登录</a>
+      </div>
+      <div class="stamp">PINPROMPT 档案</div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div class="brand"><span class="brand-stack" aria-hidden="true"><span class="brand-card brand-card--back-pink"></span><span class="brand-card brand-card--back-yellow"></span><span class="brand-card brand-card--front">拼</span></span><span>拼好词 PinPrompt · 个人提示词灵感收藏</span></div>
+    <nav aria-label="页脚">
+      <a href="/studio" target="_top">提示词库</a>
+      <a href="#">学习站</a>
+      <a href="#">[备案号]</a>
+    </nav>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* =====================================================================
+   拼好词主页 —— 交互说明
+   · 顶部导航和「看看怎么用」：锚点平滑滚动到对应区块
+   · 「开始收集」「新建一个项目」「提示词库」→ pinprompt-studio.html
+   · 「登录」「学习站」「备案号」：待接入真实链接
+   · 首屏信纸：两个空可以直接填写，宽度随内容伸缩；「复制提示词」复制填好的完整提示词，
+     未填的空保留 {占位}
+   · 四种档案：点类型按钮切换下方示例卡片（颜色 + 内容）
+   ===================================================================== */
+
+const TYPES = [
+  { id: 'image', name: '图片', tint: 'var(--img)', dot: 'var(--img-dot)' },
+  { id: 'video', name: '视频', tint: 'var(--vid)', dot: 'var(--vid-dot)' },
+  { id: 'text',  name: '文本', tint: 'var(--txt)', dot: 'var(--txt-dot)' },
+  { id: 'music', name: '音乐', tint: 'var(--mus)', dot: 'var(--mus-dot)' }
+];
+/* 示例内容：上线前可换成真实提示词 */
+const SAMPLES = {
+  image: [
+    { no: '001', title: '基础人物去油提示词', body: '保持{人物}的五官、发型与构图不变，去除面部和额头的油光，保留自然皮肤纹理与毛孔，肤色{肤色倾向}。', model: 'GPT-IMAGE-2' },
+    { no: '005', title: '涂鸦画笔', body: '把画面中的{对象}用{颜色}蜡笔涂鸦风格勾勒描边，线条松散、带手绘抖动感，背景保持原样。', model: 'GPT-IMAGE-2' },
+    { no: '007', title: '真实人物皮肤质感', body: '超写实人像特写，{光线}，清晰可见毛孔、细小绒毛与轻微瑕疵，85mm 镜头，浅景深。', model: 'GPT-IMAGE-2' }
+  ],
+  video: [
+    { no: '006', title: 'image2 + seedance 流程作业', body: '用 GPT-IMAGE-2 生成{产品}的{数量}张关键帧，再导入 Seedance，运镜方式为{运镜}。', model: 'GPT-IMAGE-2 → Seedance' },
+    { no: '008', title: '分屏视频提示词', body: '画面左右分屏：左侧为{场景A}，右侧为{场景B}，两侧动作同步进行，镜头固定。', model: 'Seedance' },
+    { no: '010', title: 'Seedance 高级丝绸广告大片', body: '{颜色}丝绸在空中缓慢翻卷，柔光掠过布料褶皱，适合{品牌类型}广告开场。', model: 'Seedance' }
+  ],
+  text: [
+    { no: '014', title: '小红书标题改写', body: '把{原文}改写成 5 个小红书风格的标题，语气{语气}，每个不超过 20 字。', model: '通用大模型' },
+    { no: '015', title: '旁白文案', body: '为{产品}写一段 30 秒广告旁白，节奏从慢到快，结尾一句话点出{卖点}。', model: '通用大模型' },
+    { no: '016', title: '分镜脚本拆解', body: '把下面的故事拆成{镜头数}个分镜，每个写清景别、动作和台词：{故事}', model: '通用大模型' }
+  ],
+  music: [
+    { no: '021', title: '片尾配乐', body: '一段{时长}的{情绪}电子配乐，节奏由缓到快，结尾留 2 秒空白。', model: '音乐生成模型' },
+    { no: '022', title: '品牌短音效', body: '为{品牌}做一段 3 秒的开场音效，听感{质感}，适合放在视频开头。', model: '音乐生成模型' },
+    { no: '023', title: '氛围底乐', body: '{场景}的环境底乐，无人声，持续{时长}，可以无缝循环。', model: '音乐生成模型' }
+  ]
+};
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let current = 'video', toastTimer, copyTimer;
+
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+/* 四种档案 */
+function renderTypes() {
+  $('tabs').innerHTML = TYPES.map(t =>
+    `<button type="button" class="btn tab" data-type="${t.id}" aria-pressed="${t.id === current}" style="--c:${t.tint}"><span class="dot" style="background:${t.dot}" aria-hidden="true"></span>${t.name}</button>`).join('');
+  const t = TYPES.find(x => x.id === current);
+  $('samples').innerHTML = SAMPLES[current].map(s => {
+    const vars = [...new Set([...s.body.matchAll(/\{([^{}]+)\}/g)].map(m => m[1]))];
+    return `
+      <article class="card sample" style="--c:${t.tint}">
+        <div class="ear">${s.no}</div>
+        <div class="sheet">
+          <h3>${esc(s.title)}</h3>
+          <p>${esc(s.body.replace(/\{([^{}]+)\}/g, '「$1」'))}</p>
+          <div class="vars">${vars.map(v => `<span class="var">${esc(v)}</span>`).join('')}</div>
+          <div class="meta">${t.name} · ${esc(s.model)}</div>
+        </div>
+      </article>`;
+  }).join('');
+}
+$('tabs').addEventListener('click', e => {
+  const b = e.target.closest('[data-type]');
+  if (!b) return;
+  current = b.dataset.type; renderTypes();
+  $('tabs').querySelector(`[data-type="${current}"]`).focus();
+});
+
+/* 首屏填空 */
+const blanks = [...document.querySelectorAll('.blank')];
+function sizeBlank(el) {
+  const len = Math.max([...el.value].length, [...el.dataset.var].length) + 1.6;
+  el.style.width = len + 'em';
+  el.classList.toggle('filled', !!el.value.trim());
+}
+function updateDemo() {
+  const n = blanks.filter(b => b.value.trim()).length;
+  $('progress').textContent = `已填 ${n} / ${blanks.length}`;
+}
+blanks.forEach(b => {
+  sizeBlank(b);
+  b.addEventListener('input', () => { sizeBlank(b); updateDemo(); });
+  b.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); const i = blanks.indexOf(b); (blanks[i + 1] || $('copy')).focus(); }
+  });
+});
+$('copy').addEventListener('click', async () => {
+  const v = n => (blanks.find(b => b.dataset.var === n).value.trim() || `{${n}}`);
+  const text = `${v('颜色')}丝绸在空中缓慢翻卷，柔光掠过布料褶皱，微距镜头跟随流动，背景纯净，质感奢华，适合${v('品牌类型')}广告开场。`;
+  let ok = true;
+  try { await navigator.clipboard.writeText(text); }
+  catch (e) {
+    const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { ok = document.execCommand('copy'); } catch (_) { ok = false; }
+    ta.remove();
+  }
+  if (!ok) { toast('复制失败，请手动选中文字复制'); return; }
+  const btn = $('copy');
+  btn.textContent = '已复制 ✓'; btn.classList.add('done');
+  toast('已复制到剪贴板');
+  clearTimeout(copyTimer);
+  copyTimer = setTimeout(() => { btn.textContent = '复制提示词'; btn.classList.remove('done'); }, 1600);
+});
+
+renderTypes();
+</script>
+</body>
+</html>
