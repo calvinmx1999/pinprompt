@@ -39,7 +39,7 @@ export default function ContentHomePage({ onLoginRequest }) {
       className="exact-kimi-home"
       onLoad={connectReferenceLinks}
       src="/october/index.html"
-      title="拼好词 PinPrompt · 个人提示词灵感收藏"
+      title="拼好词 PinPrompt｜个人提示词灵感收藏"
     />
   );
 }

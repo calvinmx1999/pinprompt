@@ -17,7 +17,7 @@ import ContentRenderer from "./ContentRenderer.jsx";
 import ContentSources from "./ContentSources.jsx";
 
 function updateMeta(item) {
-  const title = `${item.title}｜PinPrompt 拼好词`;
+  const title = `${item.title} - 拼好词 PinPrompt`;
   const description = item.summary || "PinPrompt AIGC 学习内容";
   document.title = title;
 

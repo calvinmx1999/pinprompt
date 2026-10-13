@@ -44,18 +44,20 @@ import {
 import { isContentPreviewEnabled } from "./lib/contentLoader.js";
 
 const LIST_TITLES = {
-  "/": "PinPrompt 拼好词｜AIGC学习平台",
-  "/learn": "学习路径｜PinPrompt 拼好词",
-  "/knowledge": "知识点｜PinPrompt 拼好词",
-  "/workflows": "工作流｜PinPrompt 拼好词",
-  "/tools": "工具库｜PinPrompt 拼好词",
-  "/frontier": "AI前沿｜PinPrompt 拼好词",
-  "/templates": "提示词模板｜PinPrompt 拼好词",
-  "/favorites": "我的收藏｜PinPrompt 拼好词",
-  "/my-prompts": "我的提示词｜PinPrompt 拼好词",
-  "/studio": "提示词工作台｜PinPrompt 拼好词",
-  "/search": "搜索｜PinPrompt 拼好词",
+  "/": "拼好词 PinPrompt｜个人提示词灵感收藏",
+  "/learn": "学习路径 - 拼好词 PinPrompt",
+  "/knowledge": "知识点 - 拼好词 PinPrompt",
+  "/workflows": "工作流 - 拼好词 PinPrompt",
+  "/tools": "工具库 - 拼好词 PinPrompt",
+  "/frontier": "AI前沿 - 拼好词 PinPrompt",
+  "/templates": "提示词模板 - 拼好词 PinPrompt",
+  "/favorites": "我的收藏 - 拼好词 PinPrompt",
+  "/my-prompts": "我的提示词 - 拼好词 PinPrompt",
+  "/studio": "提示词工作台 - 拼好词 PinPrompt",
+  "/search": "搜索 - 拼好词 PinPrompt",
 };
+
+const HOME_DESCRIPTION = "拼好词是给 AI 创作者的提示词收藏夹：看到好用的就存下来，按图片、视频、文本、音乐归档，用的时候填空、一键复制。";
 
 const AUTH_RESTORE_TIMEOUT_MS = 12000;
 
@@ -71,7 +73,9 @@ function setListSeo(pathname) {
   const title = LIST_TITLES[pathname];
   if (!title) return;
   document.title = title;
-  const description = "PinPrompt 提供AIGC知识、工作流、工具指南、AI前沿和提示词模板。";
+  const description = pathname === "/"
+    ? HOME_DESCRIPTION
+    : "PinPrompt 提供AIGC知识、工作流、工具指南、AI前沿和提示词模板。";
   let meta = document.head.querySelector('meta[name="description"]');
   if (!meta) {
     meta = document.createElement("meta");
@@ -79,6 +83,16 @@ function setListSeo(pathname) {
     document.head.appendChild(meta);
   }
   meta.setAttribute("content", description);
+  let canonical = document.head.querySelector('link[rel="canonical"]');
+  if (!canonical) {
+    canonical = document.createElement("link");
+    canonical.setAttribute("rel", "canonical");
+    document.head.appendChild(canonical);
+  }
+  canonical.setAttribute(
+    "href",
+    pathname === "/" ? "https://pinprompt.art/" : `${window.location.origin}${pathname}`
+  );
 }
 
 export default function App() {

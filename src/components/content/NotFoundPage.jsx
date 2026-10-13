@@ -5,7 +5,7 @@ export default function NotFoundPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = "页面未找到｜PinPrompt 拼好词";
+    document.title = "页面未找到 - 拼好词 PinPrompt";
   }, []);
 
   return (

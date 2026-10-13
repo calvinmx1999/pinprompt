@@ -32,7 +32,7 @@ export default function ContentStudioPage({ onCopy }) {
   const modules = getAllModules();
 
   useEffect(() => {
-    document.title = "内容工作台｜PinPrompt 拼好词";
+    document.title = "内容工作台 - 拼好词 PinPrompt";
   }, []);
 
   const items = useMemo(() => {
