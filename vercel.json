@@ -4,6 +4,15 @@
   "outputDirectory": "dist",
   "routes": [
     {
+      "src": "^/extension-privacy\\.html$",
+      "headers": { "Location": "/privacy" },
+      "status": 308
+    },
+    {
+      "src": "^/privacy/?$",
+      "dest": "/extension-privacy.html"
+    },
+    {
       "src": "^/$",
       "dest": "/october/index.html"
     },
