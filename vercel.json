@@ -17,6 +17,10 @@
       "dest": "/october/index.html"
     },
     {
+      "src": "^/api/extension(?:/.*)?$",
+      "dest": "/api/extension/[...path]"
+    },
+    {
       "src": "^/api/(.*)$",
       "dest": "/api/$1"
     },
