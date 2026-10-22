@@ -5,6 +5,8 @@ import PromptEditorModal from "./components/PromptEditorModal.jsx";
 import Toast from "./components/Toast.jsx";
 import V7Header from "./components/V7Header.jsx";
 import OctoberStudioPage from "./components/OctoberStudioPage.jsx";
+import ExtensionAuthPage from "./components/ExtensionAuthPage.jsx";
+import AccountSettingsPage from "./components/AccountSettingsPage.jsx";
 import V7UserPromptLibrary from "./components/V7UserPromptLibrary.jsx";
 import ContentDetailPage from "./components/content/ContentDetailPage.jsx";
 import ContentHomePage from "./components/content/ContentHomePage.jsx";
@@ -54,6 +56,8 @@ const LIST_TITLES = {
   "/favorites": "我的收藏 - 拼好词 PinPrompt",
   "/my-prompts": "我的提示词 - 拼好词 PinPrompt",
   "/studio": "提示词工作台 - 拼好词 PinPrompt",
+  "/extension/auth": "授权拼好词 Chrome 扩展 - 拼好词 PinPrompt",
+  "/account/settings": "账号设置 - 拼好词 PinPrompt",
   "/search": "搜索 - 拼好词 PinPrompt",
 };
 
@@ -100,6 +104,7 @@ export default function App() {
   const navigate = useNavigate();
   const [existingUser, setExistingUser] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [verifiedUser, setVerifiedUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
@@ -114,6 +119,8 @@ export default function App() {
   const [history, setHistory] = useState([]);
   const [toastMessage, setToastMessage] = useState("");
   const toastTimerRef = useRef(null);
+  const libraryRevisionRef = useRef(0);
+  const cloudWritesRef = useRef({ pending: 0, failed: false });
 
   useEffect(() => {
     ensureThemeSeed();
@@ -181,6 +188,38 @@ export default function App() {
 
   useEffect(() => () => window.clearTimeout(toastTimerRef.current), []);
 
+  // The cloud is authoritative, including an intentionally empty library. Refresh
+  // when returning from the extension, but never overwrite an in-flight local edit.
+  useEffect(() => {
+    if (!verifiedUser || syncState !== "ok") return;
+    let active = true;
+    let refreshing = false;
+    async function refresh() {
+      if (document.visibilityState === "hidden" || refreshing || cloudWritesRef.current.pending) return;
+      const revision = libraryRevisionRef.current;
+      refreshing = true;
+      try {
+        const library = await fetchCloudLibrary(verifiedUser.id);
+        if (!active || cloudWritesRef.current.pending || revision !== libraryRevisionRef.current) return;
+        const others = list => list.filter(item => item.userId && item.userId !== verifiedUser.id);
+        savePrompts([...others(loadPrompts()), ...library.prompts]);
+        saveProjects([...others(loadProjects()), ...library.projects]);
+        setLegacyPrompts(loadPrompts().filter(item => item.userId === verifiedUser.id));
+        setProjects(loadProjects().filter(item => item.userId === verifiedUser.id));
+      } catch { /* Keep the current view on a transient refresh failure. */ }
+      finally { refreshing = false; }
+    }
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    const timer = window.setInterval(refresh, 30000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [verifiedUser?.id, syncState]);
+
   const visibleLegacyPrompts = useMemo(() => {
     if (!currentUser) return [];
     return legacyPrompts.filter((prompt) => prompt.userId === currentUser.id);
@@ -224,25 +263,15 @@ export default function App() {
 
   async function activateCloudUser(user, localPrompts = loadPrompts(), localProjects = loadProjects()) {
     setSyncState("loading");
+    setVerifiedUser(user);
     const savedUser = saveCurrentUser(user);
     setExistingUser(savedUser);
     setCurrentUser(savedUser);
 
     try {
       const cloudLibrary = await fetchCloudLibrary(user.id);
-      const ownedLocalPrompts = localPrompts.filter((prompt) => prompt.userId === user.id);
-      const ownedLocalProjects = localProjects.filter((project) => project.userId === user.id);
-      let nextPrompts = cloudLibrary.prompts;
-      let nextProjects = cloudLibrary.projects;
-
-      if (!nextPrompts.length && ownedLocalPrompts.length) {
-        await upsertCloudPrompts(user.id, ownedLocalPrompts);
-        nextPrompts = ownedLocalPrompts;
-      }
-      if (!nextProjects.length && ownedLocalProjects.length) {
-        await upsertCloudProjects(user.id, ownedLocalProjects);
-        nextProjects = ownedLocalProjects;
-      }
+      const nextPrompts = cloudLibrary.prompts;
+      const nextProjects = cloudLibrary.projects;
 
       const normalizedPrompts = nextPrompts.map((prompt) => ({ ...prompt, userId: user.id }));
       const normalizedProjects = nextProjects.map((project) => ({ ...project, userId: user.id }));
@@ -272,7 +301,9 @@ export default function App() {
       const user = await signInCloud(email, password);
       await activateCloudUser(user);
       setShowLogin(false);
-      navigate(location.pathname.startsWith("/studio") ? "/studio" : "/my-prompts");
+      if (location.pathname !== "/extension/auth") {
+        navigate(location.pathname === "/account/settings" ? "/account/settings" : location.pathname.startsWith("/studio") ? "/studio" : "/my-prompts");
+      }
       showToast("账号与提示词已同步");
     } catch (error) {
       setAuthError(authErrorMessage(error));
@@ -300,7 +331,9 @@ export default function App() {
       }
       await activateCloudUser(result.user, [], []);
       setShowLogin(false);
-      navigate(location.pathname.startsWith("/studio") ? "/studio" : "/my-prompts");
+      if (location.pathname !== "/extension/auth") {
+        navigate(location.pathname === "/account/settings" ? "/account/settings" : location.pathname.startsWith("/studio") ? "/studio" : "/my-prompts");
+      }
       showToast("账号创建成功");
     } catch (error) {
       setAuthError(authErrorMessage(error));
@@ -317,6 +350,7 @@ export default function App() {
     }
     clearCurrentUser();
     setCurrentUser(null);
+    setVerifiedUser(null);
     setLegacyPrompts([]);
     setProjects([]);
     setSyncState("idle");
@@ -325,19 +359,31 @@ export default function App() {
     showToast("已退出登录");
   }
 
-  async function persistCloudPrompt(prompt) {
-    if (!currentUser) return;
+  async function runCloudMutation(operation) {
+    const writes = cloudWritesRef.current;
+    if (!writes.pending) writes.failed = false;
+    writes.pending++;
     setSyncState("loading");
     try {
-      await upsertCloudPrompt(currentUser.id, prompt);
-      setSyncState("ok");
+      await operation();
+      return true;
     } catch (error) {
-      setSyncState("error");
+      writes.failed = true;
       showToast(authErrorMessage(error));
+      return false;
+    } finally {
+      writes.pending--;
+      if (!writes.pending) setSyncState(writes.failed ? "error" : "ok");
     }
   }
 
+  function persistCloudPrompt(prompt) {
+    if (!currentUser) return;
+    return runCloudMutation(() => upsertCloudPrompt(currentUser.id, prompt));
+  }
+
   function saveOwnedPrompts(nextPrompts) {
+    libraryRevisionRef.current++;
     const otherUsersPrompts = loadPrompts().filter(
       (entry) => entry.userId && entry.userId !== currentUser?.id
     );
@@ -345,22 +391,16 @@ export default function App() {
   }
 
   function saveOwnedProjects(nextProjects) {
+    libraryRevisionRef.current++;
     const otherUsersProjects = loadProjects().filter(
       (entry) => entry.userId && entry.userId !== currentUser?.id
     );
     saveProjects([...otherUsersProjects, ...nextProjects]);
   }
 
-  async function persistCloudProject(project) {
+  function persistCloudProject(project) {
     if (!currentUser) return;
-    setSyncState("loading");
-    try {
-      await upsertCloudProject(currentUser.id, project);
-      setSyncState("ok");
-    } catch (error) {
-      setSyncState("error");
-      showToast(authErrorMessage(error));
-    }
+    return runCloudMutation(() => upsertCloudProject(currentUser.id, project));
   }
 
   function handleCreateProject(project) {
@@ -373,7 +413,7 @@ export default function App() {
     const nextProject = {
       ...project,
       userId: currentUser.id,
-      createdAt: project.createdAt || now,
+      createdAt: project.createdAt ?? now,
       updatedAt: now,
     };
     const nextProjects = projects.some((entry) => entry.id === nextProject.id)
@@ -392,9 +432,9 @@ export default function App() {
     const now = Date.now();
     const nextProjects = data.projects.map((p) => {
       const previous = projects.find((entry) => entry.id === p.id);
-      if (previous && previous.name === p.name && previous.color === p.dot) return previous;
-      return { ...previous, id: p.id, name: p.name, color: p.dot,
-        userId: currentUser.id, createdAt: previous?.createdAt || now, updatedAt: now };
+      if (previous && previous.name === p.name && previous.color === p.dot && JSON.stringify(previous.items || []) === JSON.stringify(p.items)) return previous;
+      return { ...previous, id: p.id, name: p.name, color: p.dot, items: p.items,
+        userId: currentUser.id, createdAt: previous?.createdAt ?? now, updatedAt: now };
     });
     const nextPrompts = data.prompts.map((p) => {
       const previous = legacyPrompts.find((entry) => entry.id === p.id);
@@ -402,7 +442,7 @@ export default function App() {
       const tags = [...new Set([...(previous?.taskTags || []), ...(previous?.effectTags || []), ...(previous?.tags || [])])];
       if (previous && previous.title === p.title && previous.content === p.body &&
           (previous.type === p.cat || (previous.type === 'workflow' && p.cat === 'text')) &&
-          (previous.model || (previous.platforms || []).join(' / ')) === p.model &&
+          (previous.model ?? (previous.platforms || []).join(' / ')) === p.model &&
           (previous.tips || '') === p.tips && !!previous.favorite === !!p.fav &&
           JSON.stringify(tags) === JSON.stringify(p.tags) &&
           JSON.stringify(previous.projectIds || []) === JSON.stringify(projectIds)) return previous;
@@ -412,7 +452,7 @@ export default function App() {
         effectTags: JSON.stringify(tags) === JSON.stringify(p.tags) ? (previous?.effectTags || []) : [],
         platforms: previous?.platforms || [p.model || '通用版'], favorite: !!p.fav,
         projectIds, userId: currentUser.id, usedCount: previous?.usedCount || 0,
-        createdAt: previous?.createdAt || now, updatedAt: now };
+        createdAt: previous?.createdAt ?? now, updatedAt: now };
     });
     const changedPrompts = nextPrompts.filter(p => !legacyPrompts.includes(p));
     const changedProjects = nextProjects.filter(p => !projects.includes(p));
@@ -423,16 +463,12 @@ export default function App() {
     setProjects(nextProjects);
     saveOwnedPrompts(nextPrompts);
     saveOwnedProjects(nextProjects);
-    setSyncState('loading');
-    Promise.all([
+    runCloudMutation(() => Promise.all([
       upsertCloudPrompts(currentUser.id, changedPrompts),
       upsertCloudProjects(currentUser.id, changedProjects),
       ...removedPrompts.map(p => deleteCloudPrompt(currentUser.id, p.id)),
       ...removedProjects.map(p => deleteCloudProject(currentUser.id, p.id)),
-    ]).then(() => setSyncState('ok')).catch(error => {
-      setSyncState('error');
-      showToast(authErrorMessage(error));
-    });
+    ]));
   }
 
   function handleCopyLegacyPrompt(prompt, content = prompt?.content, successMessage = "已复制收藏提示词") {
@@ -464,7 +500,7 @@ export default function App() {
     const nextPrompt = {
       ...prompt,
       userId: currentUser.id,
-      createdAt: prompt.createdAt || now,
+      createdAt: prompt.createdAt ?? now,
       updatedAt: now,
     };
     const nextPrompts = legacyPrompts.some((entry) => entry.id === nextPrompt.id)
@@ -485,15 +521,8 @@ export default function App() {
     setShowPromptEditor(false);
     setEditingPrompt(null);
     if (currentUser) {
-      setSyncState("loading");
-      try {
-        await deleteCloudPrompt(currentUser.id, promptId);
-        setSyncState("ok");
-      } catch (error) {
-        setSyncState("error");
-        showToast(authErrorMessage(error));
-        return;
-      }
+      const saved = await runCloudMutation(() => deleteCloudPrompt(currentUser.id, promptId));
+      if (!saved) return;
     }
     showToast("提示词已删除");
   }
@@ -517,6 +546,14 @@ export default function App() {
   function openPromptStudio() {
     navigate("/studio");
     if (!currentUser) setShowLogin(true);
+  }
+
+  // Reuse the existing login form in place: the authorization URL and its entire
+  // query remain untouched across login/registration, including a page reload.
+  if (location.pathname === "/extension/auth") {
+    return <ExtensionAuthPage authReady={authReady} currentUser={verifiedUser}
+      authError={authError} authLoading={authLoading} existingUser={existingUser}
+      onLogin={handleLogin} onRegister={handleRegister} />;
   }
 
   if (showLogin) {
@@ -613,6 +650,10 @@ export default function App() {
             }
           />
           <Route
+            path="/account/settings"
+            element={<AccountSettingsPage currentUser={verifiedUser} authReady={authReady} onLoginRequest={() => setShowLogin(true)} />}
+          />
+          <Route
             path="/studio"
             element={
               currentUser ? (
@@ -628,6 +669,7 @@ export default function App() {
                     setShowPromptEditor(true);
                   }}
                   onLogout={handleLogout}
+                  onAccountSettings={() => navigate("/account/settings")}
                   onNewPrompt={handleNewUserPrompt}
                   onToast={showToast}
                   onTogglePromptFavorite={handleToggleUserPromptFavorite}
