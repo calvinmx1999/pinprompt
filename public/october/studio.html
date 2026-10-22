@@ -443,7 +443,7 @@ const assemble = p => p.body.replace(VAR_RE, (all, double, single) => valOf(p.id
 const getPrompt = id => db.prompts.find(p => p.id === id);
 const getProject = id => db.projects.find(p => p.id === id);
 let nextId = () => crypto.randomUUID();
-const archiveNo = p => String(db.prompts.indexOf(p) + 1).padStart(3, '0');
+const archiveNo = p => p.no ?? String(db.prompts.indexOf(p) + 1).padStart(3, '0');
 const matchQ = p => { const q = state.q.trim().toLowerCase(); return !q || (p.title + ' ' + p.body + ' ' + p.tags.join(' ') + ' ' + p.model).toLowerCase().includes(q); };
 
 let toastTimer;
@@ -481,7 +481,7 @@ function cardHTML(p) {
   const label = copied ? '已复制 ✓' : (vars.length ? `填写 · ${vars.length} 项` : '复制');
   return `
     <article class="card${state.selectedId === p.id ? ' sel' : ''}" data-card="${p.id}" style="--c:${c.tint}">
-      <div class="ear">${archiveNo(p)}${p.fav ? '<span class="fav" aria-label="已收藏">★</span>' : ''}</div>
+      <div class="ear">${esc(archiveNo(p))}${p.fav ? '<span class="fav" aria-label="已收藏">★</span>' : ''}</div>
       <div class="sheet">
         <button type="button" class="card-title" data-act="open" data-id="${p.id}" aria-describedby="open-hint">${esc(p.title)}</button>
         <p class="preview">${esc(p.body.replace(VAR_RE, (_, double, single) => `「${double || single}」`).replace(/\s+/g, ' '))}</p>
@@ -592,7 +592,7 @@ function renderArchive() {
   const c = catOf(p.cat), ver = p.version || '通用版', tips = state.sheet === 'tips';
   const head = `
     <div class="a-top">
-      <div class="a-tags"><span class="a-pill"><span class="dot" style="background:${c.dot}" aria-hidden="true"></span>${c.name} · ${esc(ver)}</span><span class="a-no">NO.${archiveNo(p)}</span></div>
+      <div class="a-tags"><span class="a-pill"><span class="dot" style="background:${c.dot}" aria-hidden="true"></span>${c.name} · ${esc(ver)}</span><span class="a-no">NO.${esc(archiveNo(p))}</span></div>
       <div class="a-tools">
         <button type="button" class="star" data-act="star" aria-pressed="${!!p.fav}" aria-label="${p.fav ? '取消收藏' : '收藏'}">${ICON_STAR}</button>
         <button type="button" class="a-close" id="a-close" data-act="close-archive" aria-label="关闭档案">${ICON_CLOSE}</button>
@@ -788,7 +788,7 @@ function openPicker() {
   $('pk-desc').textContent = `勾选要放进「${pj.name}」的提示词。`;
   $('pk-list').innerHTML = db.prompts.map(p => {
     const c = catOf(p.cat);
-    return `<label class="pick"><input type="checkbox" value="${p.id}"${pj.items.includes(p.id) ? ' checked' : ''}><span class="dot" style="background:${c.dot}" aria-hidden="true"></span><span class="no">${archiveNo(p)}</span><span>${esc(p.title)}</span></label>`;
+    return `<label class="pick"><input type="checkbox" value="${p.id}"${pj.items.includes(p.id) ? ' checked' : ''}><span class="dot" style="background:${c.dot}" aria-hidden="true"></span><span class="no">${esc(archiveNo(p))}</span><span>${esc(p.title)}</span></label>`;
   }).join('');
   openDialog($('pickDlg'));
   const first = $('pk-list').querySelector('input'); if (first) first.focus();

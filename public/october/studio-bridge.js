@@ -7,17 +7,18 @@
   db.vals = values && typeof values === 'object' ? values : {};
   const mapPrompts = prompts => prompts.map(p => ({
     id: p.id, title: p.title, body: p.content || '',
-    cat: ['image', 'video', 'text', 'music'].includes(p.type) ? p.type : 'text',
-    model: p.model || (p.platforms || []).join(' / '),
+    cat: ['image', 'video', 'text', 'music'].includes(p.type) ? p.type : 'image',
+    model: p.model ?? (p.platforms || []).join(' / '),
     tags: [...new Set([...(p.taskTags || []), ...(p.effectTags || []), ...(p.tags || [])])],
     tips: p.tips || '', fav: !!p.favorite,
-    version: (p.platforms || [])[0] || '通用版',
+    version: (p.platforms || [])[0] || '通用版', no: p.no,
   }));
   const mapProjects = (projects, prompts) => projects.map(p => ({
     id: p.id, name: p.name, dot: p.color || '#E8508A',
-    items: prompts.filter(prompt =>
+    items: [...new Set([...(p.items || []).filter(id => prompts.some(prompt => prompt.id === id &&
+      (prompt.projectIds || [prompt.projectId]).includes(p.id))), ...prompts.filter(prompt =>
       (prompt.projectIds || [prompt.projectId]).includes(p.id)
-    ).map(prompt => prompt.id),
+    ).map(prompt => prompt.id)])],
   }));
   window.pinpromptRefresh = (prompts, projects) => {
     const nextPrompts = mapPrompts(prompts), nextProjects = mapProjects(projects, prompts);
@@ -65,7 +66,7 @@
     }
     if (action === 'account-settings') {
       e.stopImmediatePropagation(); setMenu(false);
-      toast(`${host.user.name} · ${host.user.email || '已登录'}`);
+      host.settings();
     }
   }, true);
   render();
