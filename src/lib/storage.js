@@ -1048,11 +1048,12 @@ function normalizeProject(project, index) {
     name: project?.name || `项目 ${index + 1}`,
     desc: project?.desc || project?.description || "",
     color: project?.color || fallbackColors[index % fallbackColors.length],
+    items: Array.isArray(project?.items) ? project.items : [],
     status: ["active", "done", "archived"].includes(project?.status) ? project.status : "active",
     promptCount: Number(project?.promptCount || 0),
     workflowCount: Number(project?.workflowCount || 0),
-    createdAt: Number(project?.createdAt || Date.now()),
-    updatedAt: Number(project?.updatedAt || Date.now()),
+    createdAt: new Date(project?.createdAt ?? Date.now()).getTime(),
+    updatedAt: new Date(project?.updatedAt ?? Date.now()).getTime(),
   };
 }
 
@@ -1076,6 +1077,8 @@ function normalizePrompt(prompt, index, userId = "") {
     content: prompt?.content || "",
     tips: prompt?.tips || "",
     model: prompt?.model || "",
+    no: typeof prompt?.no === "string" ? prompt.no : undefined,
+    source: prompt?.source || "",
     type,
     platforms: platforms.length ? platforms : ["通用版"],
     taskTags: Array.isArray(prompt?.taskTags) ? prompt.taskTags : Array.isArray(prompt?.tags) ? prompt.tags.slice(0, 2) : [],
@@ -1085,8 +1088,8 @@ function normalizePrompt(prompt, index, userId = "") {
     usedCount: Number(prompt?.usedCount ?? prompt?.usageCount ?? 0),
     lastUsedAt: prompt?.lastUsedAt ? Number(new Date(prompt.lastUsedAt)) : null,
     userId: String(prompt?.userId || userId || ""),
-    createdAt: Number(prompt?.createdAt || prompt?.updatedAt || Date.now()),
-    updatedAt: Number(prompt?.updatedAt || prompt?.createdAt || Date.now()),
+    createdAt: new Date(prompt?.createdAt ?? prompt?.updatedAt ?? Date.now()).getTime(),
+    updatedAt: new Date(prompt?.updatedAt ?? prompt?.createdAt ?? Date.now()).getTime(),
     variants,
     variables: normalizedVariables,
     tags: Array.isArray(prompt?.tags) ? prompt.tags : [],
@@ -1156,8 +1159,8 @@ function normalizeProjectWithUser(project, index, userId = "") {
   return {
     ...normalizeProject(project, index),
     userId: String(project?.userId || userId || ""),
-    createdAt: new Date(project?.createdAt || Date.now()).toISOString(),
-    updatedAt: new Date(project?.updatedAt || Date.now()).toISOString(),
+    createdAt: new Date(project?.createdAt ?? Date.now()).toISOString(),
+    updatedAt: new Date(project?.updatedAt ?? Date.now()).toISOString(),
   };
 }
 

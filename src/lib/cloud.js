@@ -106,14 +106,19 @@ export async function signOutCloud() {
 }
 
 async function fetchRows(table, userId) {
-  const { data, error } = await getSupabase()
-    .from(table)
-    .select("id, data")
-    .eq("user_id", userId);
-  if (error) throw error;
-  return (data || []).map((row) => ({
+  const rows = [];
+  const pageSize = 1000;
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await getSupabase().from(table)
+      .select("id, data").eq("user_id", userId).order("id")
+      .range(offset, offset + pageSize - 1);
+    if (error) throw error;
+    rows.push(...(data || []));
+    if (!data || data.length < pageSize) break;
+  }
+  return rows.map((row) => ({
     ...(row.data || {}),
-    id: row.data?.id || row.id,
+    id: row.id,
     userId,
   }));
 }
