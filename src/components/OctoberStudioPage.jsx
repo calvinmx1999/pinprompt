@@ -21,6 +21,7 @@ export default function OctoberStudioPage(props) {
       ),
       logout: () => latest.current.onLogout(),
       home: () => latest.current.onBack(),
+      settings: () => latest.current.onAccountSettings(),
     });
     window.getPinpromptStudioHost = getHost;
     return () => {
