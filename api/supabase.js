@@ -1,8 +1,6 @@
-const SUPABASE_ORIGIN =
-  process.env.SUPABASE_URL || "https://zayfzpsrhxiaetrcttko.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY =
-  process.env.SUPABASE_PUBLISHABLE_KEY ||
-  "sb_publishable_Z4b-LXyOAGf5rECj64ILZA_Pu-mTrIk";
+import { cloudConfig } from "../server/cloud-config.js";
+
+const { url: SUPABASE_ORIGIN, publicKey: SUPABASE_PUBLISHABLE_KEY } = cloudConfig();
 
 const ALLOWED_PATHS = ["/auth/v1/", "/rest/v1/"];
 const UPSTREAM_TIMEOUT_MS = 10000;
